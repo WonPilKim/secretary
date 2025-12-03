@@ -1,0 +1,89 @@
+<!-- templates/memo_form.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>
+    {% if mode == 'edit' %}메모 수정{% else %}메모 작성{% endif %}
+  </title>
+</head>
+<body>
+  <h1>
+    {% if mode == 'edit' %}메모 수정{% else %}메모 작성{% endif %}
+  </h1>
+
+  <p>
+    <a href="{{ url_for('memo_list') }}">← 메모 목록</a>
+  </p>
+
+  {% if error %}
+    <p style="color:red;">{{ error }}</p>
+  {% endif %}
+
+  <form method="post">
+    <textarea id="memo-text" name="text" rows="5" cols="40" placeholder="메모 내용을 입력하세요.">{% if memo %}{{ memo.text }}{% endif %}</textarea>
+    <br>
+    <button type="button" id="voice-btn">음성으로 입력</button>
+    <button type="submit">
+        {% if mode == 'edit' %}수정 완료{% else %}저장{% endif %}
+    </button>
+</form>
+<script>
+  // 브라우저가 음성 인식을 지원하는지 확인
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const voiceBtn = document.getElementById("voice-btn");
+  const memoText = document.getElementById("memo-text");
+
+  let recognition = null;
+  let listening = false;
+
+  if (!SpeechRecognition) {
+    // 지원 안 하면 버튼 비활성화
+    voiceBtn.textContent = "음성 입력 (브라우저 미지원)";
+    voiceBtn.disabled = true;
+  } else {
+    recognition = new SpeechRecognition();
+    recognition.lang = "ko-KR";           // 한국어
+    recognition.continuous = false;       // 한 번 말하면 종료
+    recognition.interimResults = false;   // 중간 결과는 안 받음
+
+    recognition.onstart = () => {
+      listening = true;
+      voiceBtn.textContent = "듣는 중... (멈추려면 다시 클릭)";
+    };
+
+    recognition.onend = () => {
+      listening = false;
+      voiceBtn.textContent = "음성으로 입력";
+    };
+
+    recognition.onerror = (event) => {
+      console.error("음성 인식 에러:", event.error);
+      listening = false;
+      voiceBtn.textContent = "음성으로 입력";
+      alert("음성 인식 중 오류가 발생했습니다.");
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      // 기존 내용 뒤에 붙이기
+      if (memoText.value) {
+        memoText.value += "\n" + transcript;
+      } else {
+        memoText.value = transcript;
+      }
+    };
+
+    voiceBtn.onclick = () => {
+      if (!listening) {
+        recognition.start();
+      } else {
+        recognition.stop();
+      }
+    };
+  }
+</script>
+</body>
+</html>

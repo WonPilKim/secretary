@@ -1,0 +1,67 @@
+<!-- templates/memo_list.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>메모 목록</title>
+</head>
+<body>
+  <h1>메모 목록</h1>
+
+  <p>
+    <a href="{{ url_for('memo_new') }}">➕ 새 메모 작성</a>
+    | <a href="{{ url_for('index') }}">🏠 메인으로</a>
+  </p>
+
+  <!-- 🔍 검색 폼 (GET 방식) -->
+  <form method="get" action="{{ url_for('memo_list') }}">
+    <input
+      type="text"
+      name="q"
+      placeholder="검색할 키워드를 입력하세요"
+      value="{{ q }}"
+    >
+    <button type="submit">검색</button>
+    {% if q %}
+      <a href="{{ url_for('memo_list') }}">검색 초기화</a>
+    {% endif %}
+  </form>
+
+  <hr>
+
+  {% if memos|length == 0 %}
+    {% if q %}
+      <p>"{{ q }}" 에 대한 검색 결과가 없습니다.</p>
+    {% else %}
+      <p>저장된 메모가 없습니다.</p>
+    {% endif %}
+  {% else %}
+    <ul>
+      {% for memo in memos %}
+        <li>
+          <strong>{{ memo.text }}</strong><br>
+          작성일: {{ memo.created_at }}
+          {% if memo.updated_at %}
+            (수정: {{ memo.updated_at }})
+          {% endif %}
+          <br>
+
+          <!-- 수정 버튼 -->
+          <a href="{{ url_for('memo_edit', memo_id=memo._id) }}">수정</a>
+
+          <!-- 삭제 버튼 (POST 요청) -->
+          <form
+            action="{{ url_for('memo_delete', memo_id=memo._id) }}"
+            method="post"
+            style="display:inline"
+            onsubmit="return confirm('정말 삭제할까요?');"
+          >
+            <button type="submit">삭제</button>
+          </form>
+        </li>
+        <hr>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</body>
+</html>

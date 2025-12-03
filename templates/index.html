@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 비서</title>
+    <style>
+        body { font-family: Arial; padding: 30px; background: #f3f3f3; }
+        #chat { width: 100%; max-width: 500px; margin: auto; }
+        .bubble { padding: 10px; margin: 10px 0; border-radius: 10px; }
+        .user { background: #d1e8ff; text-align: right; }
+        .bot  { background: #fff; border: 1px solid #ccc; }
+        input { width: 80%; padding: 10px; }
+        button { padding: 10px; }
+    </style>
+</head>
+
+<body>
+    <div id="chat"></div>
+
+    <input type="text" id="inputText" placeholder="명령을 입력하세요">
+    <button onclick="sendCommand()">보내기</button>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
