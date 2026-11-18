@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "761531788860",
+    "project_id": "malbiseo-6edb9",
+    "storage_bucket": "malbiseo-6edb9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761531788860:android:d5daf33fd64a0074919d39",
+        "android_client_info": {
+          "package_name": "com.malbiseo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_alfaWKBb4dMLj9MSojEmJEu_LFpObI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
