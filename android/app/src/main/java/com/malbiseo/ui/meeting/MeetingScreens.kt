@@ -86,7 +86,11 @@ import com.malbiseo.ui.common.EmptyText
 import com.malbiseo.ui.common.ScreenHeader
 import com.malbiseo.ui.common.formatDateTime
 import com.malbiseo.ui.common.formatDuration
+import com.malbiseo.ai.LocalSummarizer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -133,7 +137,7 @@ fun MeetingListScreen(onOpen: (Long) -> Unit, onRecord: () -> Unit) {
                                         )
                                         if (m.summary != null) {
                                             Spacer(Modifier.width(6.dp))
-                                            Pill("AI 요약")
+                                            Pill("요약")
                                         }
                                     }
                                     Text(
@@ -376,6 +380,7 @@ fun MeetingDetailScreen(id: Long, onBack: () -> Unit) {
     var editing by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
     var askDelete by remember { mutableStateOf(false) }
+    val hasApiKey by remember { app.settings.apiKey.map { it.isNotBlank() } }.collectAsState(initial = false)
 
     val m = meeting ?: run {
         Column { ScreenHeader("회의록", onBack = onBack) }
@@ -387,12 +392,18 @@ fun MeetingDetailScreen(id: Long, onBack: () -> Unit) {
         error = null
         scope.launch {
             try {
-                val summary = app.claude.summarizeMeeting(
-                    apiKey = app.settings.apiKey.first(),
-                    model = app.settings.model.first(),
-                    title = m.title,
-                    transcript = m.transcript,
-                )
+                val apiKey = app.settings.apiKey.first()
+                val summary = if (apiKey.isBlank()) {
+                    // API 키가 없으면 기기 안에서 무료 요약
+                    withContext(Dispatchers.Default) { LocalSummarizer.summarize(m.title, m.transcript) }
+                } else {
+                    app.claude.summarizeMeeting(
+                        apiKey = apiKey,
+                        model = app.settings.model.first(),
+                        title = m.title,
+                        transcript = m.transcript,
+                    )
+                }
                 dao.update(m.copy(summary = summary))
             } catch (e: Exception) {
                 error = e.message ?: "요약 중 오류가 발생했어요."
@@ -434,7 +445,7 @@ fun MeetingDetailScreen(id: Long, onBack: () -> Unit) {
             AppCard(Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)) {
                 Column(Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("AI 요약", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                        Text("요약", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                         if (summarizing) {
                             CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                         } else {
@@ -455,7 +466,9 @@ fun MeetingDetailScreen(id: Long, onBack: () -> Unit) {
                     }
                     if (m.summary == null && error == null && !summarizing) {
                         Text(
-                            "버튼을 누르면 논의 내용·결정 사항·할 일을 정리해 드려요.",
+                            if (hasApiKey) "버튼을 누르면 Claude AI가 논의 내용·결정 사항·할 일을 정리해 드려요."
+                            else "버튼을 누르면 논의 내용·결정 사항·할 일을 무료로 정리해 드려요.\n" +
+                                "(설정에서 Claude API 키를 넣으면 더 자연스러운 AI 요약을 쓸 수 있어요)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

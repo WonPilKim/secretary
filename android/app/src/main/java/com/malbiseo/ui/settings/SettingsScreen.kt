@@ -115,7 +115,7 @@ fun SettingsScreen() {
 
             HorizontalDivider()
 
-            Text("회의록 AI 요약", style = MaterialTheme.typography.titleMedium)
+            Text("회의록 AI 요약 (선택)", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = apiKey,
                 onValueChange = { apiKey = it },
@@ -141,7 +141,8 @@ fun SettingsScreen() {
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                "API 키는 console.anthropic.com 에서 발급받을 수 있어요. 키는 이 기기에만 저장됩니다.",
+                "API 키가 없어도 회의록은 무료 요약으로 정리돼요. 키를 넣으면 Claude AI가 더 자연스럽게 요약해요(유료).\n" +
+                    "API 키는 console.anthropic.com 에서 발급받을 수 있어요. 키는 이 기기에만 저장됩니다.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
