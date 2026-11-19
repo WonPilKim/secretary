@@ -4,6 +4,16 @@ import com.malbiseo.ui.auth.LocalUserData
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,7 +47,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -189,20 +198,28 @@ fun MeetingRecordScreen(onSaved: (Long) -> Unit, onBack: () -> Unit) {
             elapsed++
         }
     }
-    LaunchedEffect(lines.size) {
-        if (lines.isNotEmpty()) listState.animateScrollToItem(lines.lastIndex)
+    // 확정 문장이 늘거나, 지금 말하는 문장이 바뀔 때마다 맨 아래로
+    LaunchedEffect(lines.size, speech.partial) {
+        val last = lines.size + (if (speech.partial.isNotEmpty()) 1 else 0) - 1
+        if (last >= 0) listState.animateScrollToItem(last)
     }
 
     BackHandler(enabled = lines.isNotEmpty()) { askDiscard = true }
 
+    var saving by remember { mutableStateOf(false) }
     fun save() {
+        if (saving) return
         speech.stop()
-        if (lines.isEmpty()) {
-            Toast.makeText(context, "기록된 내용이 없어요.", Toast.LENGTH_SHORT).show()
-            return
-        }
+        saving = true
         scope.launch {
-            delay(300) // stop() 직후 마지막 문장이 들어올 시간
+            // 마지막 문장이 확정될 때까지 잠시 대기
+            var waited = 0
+            while (speech.finalizing && waited < 2000) { delay(100); waited += 100 }
+            if (lines.isEmpty()) {
+                saving = false
+                Toast.makeText(context, "기록된 내용이 없어요.", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             val id = dao.insert(
                 Meeting(
                     title = title.ifBlank { "제목 없는 회의" },
@@ -228,28 +245,71 @@ fun MeetingRecordScreen(onSaved: (Long) -> Unit, onBack: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(formatDuration(elapsed), style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.width(12.dp))
-                if (speech.listening) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(8.dp))
-                    Text("듣는 중", color = MaterialTheme.colorScheme.primary)
-                } else {
-                    Text(
+                when {
+                    speech.listening -> {
+                        Box(
+                            Modifier.size(10.dp).clip(CircleShape)
+                                .background(if (speech.ready) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (speech.ready) "듣는 중" else "준비 중…",
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        LevelMeter(speech.level, Modifier.weight(1f))
+                    }
+                    speech.finalizing || saving -> {
+                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text("마무리 중…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    else -> Text(
                         if (lines.isEmpty()) "시작을 누르세요" else "일시정지됨",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
+            speech.status?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
             Spacer(Modifier.height(8.dp))
-            HorizontalDivider()
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items(lines) { Text(it) }
-                if (speech.partial.isNotEmpty()) {
-                    item {
-                        Text(speech.partial, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            // 실시간 받아쓰기
+            Card(Modifier.weight(1f).fillMaxWidth()) {
+                if (lines.isEmpty() && speech.partial.isEmpty()) {
+                    Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (speech.listening) "말씀하시면 여기에 실시간으로 적혀요"
+                            else "시작을 누르면 말하는 내용이\n실시간으로 받아 적혀요",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(lines) { line -> TranscriptLine(line) }
+                        if (speech.partial.isNotEmpty()) {
+                            item(key = "partial") {
+                                Text(
+                                    buildAnnotatedString {
+                                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                            append("[${formatDuration(elapsed)}] ")
+                                        }
+                                        append(speech.partial)
+                                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(" ▍") }
+                                    },
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontStyle = FontStyle.Italic,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -257,13 +317,14 @@ fun MeetingRecordScreen(onSaved: (Long) -> Unit, onBack: () -> Unit) {
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedButton(
                 onClick = { if (speech.listening) speech.stop() else startMic() },
+                enabled = !saving,
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(if (speech.listening) Icons.Filled.Pause else Icons.Filled.Mic, contentDescription = null)
                 Spacer(Modifier.width(6.dp))
                 Text(if (speech.listening) "일시정지" else if (lines.isEmpty()) "시작" else "계속")
             }
-            Button(onClick = { save() }, modifier = Modifier.weight(1f)) { Text("종료 및 저장") }
+            Button(onClick = { save() }, enabled = !saving, modifier = Modifier.weight(1f)) { Text("종료 및 저장") }
         }
     }
 
@@ -276,6 +337,28 @@ fun MeetingRecordScreen(onSaved: (Long) -> Unit, onBack: () -> Unit) {
             onDismiss = { askDiscard = false },
         )
     }
+}
+
+
+@Composable
+private fun TranscriptLine(line: String) {
+    val m = Regex("^(\\[[^\\]]*\\])\\s*(.*)$").find(line)
+    if (m == null) { Text(line); return }
+    Text(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(m.groupValues[1] + " ") }
+            append(m.groupValues[2])
+        }
+    )
+}
+
+@Composable
+private fun LevelMeter(level: Float, modifier: Modifier = Modifier) {
+    val animated by animateFloatAsState(level, label = "level")
+    LinearProgressIndicator(
+        progress = { animated },
+        modifier = modifier.height(6.dp).clip(CircleShape),
+    )
 }
 
 // ───────────────────────── 상세 / 요약 ─────────────────────────
