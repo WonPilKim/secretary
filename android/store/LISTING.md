@@ -1,7 +1,7 @@
 # 말비서: Google Play 스토어 등록정보
 
 Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 붙여넣을 내용입니다.
-운영자: 원앤컴퍼니 (대표 김원필) · 문의: kwpteam@gmail.com
+운영자: 원앤컴퍼니 (대표 김원필) · 문의: cosimprogram@gmail.com
 
 ---
 
@@ -15,7 +15,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | 무료/유료 | 무료 |
 | 카테고리 | 생산성 |
 | 태그 (선택) | 메모, 생산성, 일정 |
-| 이메일 | kwpteam@gmail.com |
+| 이메일 | cosimprogram@gmail.com |
 | 웹사이트 | https://malbiseo.kr |
 | 개인정보처리방침 URL | https://malbiseo.kr/privacy |
 | 서비스 약관 URL | https://malbiseo.kr/terms |
@@ -67,7 +67,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 • 정확한 받아쓰기를 위해 조용한 환경을 권장합니다
 • 회원 탈퇴는 설정 > 회원 탈퇴에서 언제든 할 수 있으며, 모든 데이터가 즉시 삭제됩니다
 
-문의: kwpteam@gmail.com
+문의: cosimprogram@gmail.com
 ```
 
 ## 4. 그래픽 (이 폴더의 파일)
