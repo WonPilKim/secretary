@@ -1,7 +1,7 @@
 # 말비서: Google Play 스토어 등록정보
 
 Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 붙여넣을 내용입니다.
-운영자: 김원필 · 문의: kwpteam@gmail.com
+운영자: 원앤컴퍼니 (대표 김원필) · 문의: kwpteam@gmail.com
 
 ---
 
