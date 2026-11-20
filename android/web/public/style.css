@@ -56,5 +56,8 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0}
 .sitefoot{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:14px}
 .sitefoot .in{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .sitefoot a{margin-right:18px;color:inherit}
+.sitefoot .biz{font-size:13px;line-height:1.8}
+.sitefoot .biz a{margin-right:0}
+.sitefoot .biz span{white-space:nowrap}
 @media (max-width:860px){.sitenav .in{padding:0 16px}.sitenav .brand{font-size:18px;gap:8px}.sitenav .links{gap:12px}.sitenav .links a,.sitenav .links button{font-size:14px}.sitenav .links .pill-btn{padding:7px 13px}}
 @media print{.sitenav,.sitefoot{display:none!important}}
