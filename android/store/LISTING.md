@@ -18,6 +18,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | 이메일 | kwpteam@gmail.com |
 | 웹사이트 | https://malbiseo.kr |
 | 개인정보처리방침 URL | https://malbiseo.kr/privacy |
+| 서비스 약관 URL | https://malbiseo.kr/terms |
 
 ## 2. 간단한 설명 (80자)
 
@@ -145,6 +146,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | https://malbiseo.kr | `index.html` (앱 소개 홈페이지) |
 | https://malbiseo.kr/privacy | `privacy.html` |
 | https://malbiseo.kr/delete-account | `delete-account.html` |
+| https://malbiseo.kr/terms | `terms.html` |
 
 ### 6-1. 올리기 (처음 한 번 설치)
 1. Node.js(nodejs.org, LTS 버전)를 설치합니다.
