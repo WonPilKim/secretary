@@ -39,14 +39,37 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
 .memo .txt{white-space:pre-wrap;flex:1}
 .memo .foot{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
 .sched h3{font-size:16px;margin:20px 0 8px}
+.viewbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:none;padding:7px 14px;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--bg)}
+.calnav{display:flex;align-items:center;gap:6px}
+.calnav .ttl{font-weight:800;font-size:17px;min-width:118px;text-align:center}
+.calnav .btn{padding:6px 12px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.cal .dow{font-size:13px;font-weight:700;color:var(--muted);text-align:center;padding:8px 0}
+.cal .sun,.cal .sun .n{color:#dc2626}.cal .sat,.cal .sat .n{color:#2563eb}
+.cal .day{min-height:100px;border:0;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:6px;font:inherit;background:none;color:var(--fg);cursor:pointer;display:flex;flex-direction:column;align-items:stretch;gap:3px;text-align:left;overflow:hidden}
+.cal .day.col0{border-left:0}
+.cal .day:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.cal .day.out{opacity:.4}
+.cal .day .n{font-size:13px;font-weight:700;align-self:flex-start;line-height:22px;min-width:22px;text-align:center}
+.cal .day.today .n{background:var(--accent);color:var(--bg);border-radius:99px;padding:0 6px}
+.cal .day[aria-selected=true]{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal .chip{font-size:12px;line-height:1.5;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--fg);border-radius:6px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .chip.done{opacity:.55;text-decoration:line-through}
+.cal .more{font-size:12px;color:var(--muted);padding-left:4px}
+.cal .dots{display:none}
+.empty-day{color:var(--muted);font-size:14px;padding:6px 0 12px}
 .ev{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:8px}
-.ev .when{flex:none;width:118px;color:var(--accent);font-weight:700;font-size:14px}
+.ev .when{flex:none;width:160px;color:var(--accent);font-weight:700;font-size:14px}
 .ev.done{opacity:.55}.ev.done .ttl{text-decoration:line-through}
 .ev .note{color:var(--muted);font-size:14px;white-space:pre-wrap}
 .note-ro{font-size:13px;color:var(--muted);margin-top:24px}
 .hidden{display:none!important}
+@media (max-width:760px){.cal .day{min-height:58px;padding:4px;align-items:center}.cal .day .n{align-self:center}.cal .chip,.cal .more{display:none}.cal .dots{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}.cal .dots i{width:6px;height:6px;border-radius:50%;background:var(--accent)}.viewbar{justify-content:center}}
 @media (max-width:760px){.split{grid-template-columns:1fr}.list{max-height:none}.ev{flex-direction:column;gap:4px}.ev .when{width:auto}}
-@media print{body{background:#fff;color:#000}.topbar,.tabs,.search,.list,.actions,.note-ro,.back{display:none!important}.split{display:block}.detail{border:0;padding:0}}
+@media print{body{background:#fff;color:#000}.viewbar,.topbar,.tabs,.search,.list,.actions,.note-ro,.back{display:none!important}.split{display:block}.detail{border:0;padding:0}}
 </style></head>
 <body>
 <nav class="sitenav"><div class="in">
@@ -251,23 +274,101 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
     });
   }
 
+  // ── 일정: 캘린더 / 리스트 보기 ──
+  var fTime=new Intl.DateTimeFormat('ko-KR',{hour:'numeric',minute:'2-digit'});
+  var fDay=new Intl.DateTimeFormat('ko-KR',{month:'long',day:'numeric',weekday:'long'});
+  var schedView='calendar';
+  try{ if(localStorage.getItem('malbiseo.schedView')==='list') schedView='list'; }catch(e){}
+  var calMonth=new Date(); calMonth.setDate(1); calMonth.setHours(0,0,0,0);
+  var calSel=dayKey(new Date());
+  function dayKey(d){ d=new Date(d); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+  function evRow(s,timeOnly){
+    var r=el('div','ev'+(s.done?' done':''));
+    r.appendChild(el('div','when',(timeOnly?fTime:fShort).format(s.startAt)));
+    var b=el('div'); b.appendChild(el('div','ttl',(s.done?'✓ ':'')+s.title)); if(s.note) b.appendChild(el('div','note',s.note));
+    r.appendChild(b); return r;
+  }
+
   function renderSchedules(){
     var box=$('pSchedules'); clear(box);
     var items=data.schedules.filter(function(s){return match(s.title)||match(s.note);});
-    if(!items.length){ box.appendChild(el('div','empty',data.schedules.length?'검색 결과가 없어요.':'아직 일정이 없어요.')); return; }
+
+    // 보기 전환 + (캘린더일 때) 달 이동
+    var bar=el('div','viewbar'), seg=el('div','seg');
+    [['calendar','📅 캘린더'],['list','☰ 리스트']].forEach(function(v){
+      var b=el('button',null,v[1]); b.type='button'; b.setAttribute('aria-pressed',String(schedView===v[0]));
+      b.onclick=function(){ schedView=v[0]; try{localStorage.setItem('malbiseo.schedView',v[0]);}catch(e){} renderSchedules(); };
+      seg.appendChild(b);
+    });
+    bar.appendChild(seg);
+    if(schedView==='calendar'){
+      var nav=el('div','calnav');
+      var prev=el('button','btn','‹'); prev.type='button'; prev.setAttribute('aria-label','이전 달');
+      var next=el('button','btn','›'); next.type='button'; next.setAttribute('aria-label','다음 달');
+      var today=el('button','btn','오늘'); today.type='button';
+      prev.onclick=function(){ calMonth.setMonth(calMonth.getMonth()-1); renderSchedules(); };
+      next.onclick=function(){ calMonth.setMonth(calMonth.getMonth()+1); renderSchedules(); };
+      today.onclick=function(){ calMonth=new Date(); calMonth.setDate(1); calMonth.setHours(0,0,0,0); calSel=dayKey(new Date()); renderSchedules(); };
+      nav.appendChild(prev); nav.appendChild(el('div','ttl',calMonth.getFullYear()+'년 '+(calMonth.getMonth()+1)+'월')); nav.appendChild(next); nav.appendChild(today);
+      bar.appendChild(nav);
+    }
+    box.appendChild(bar);
+
+    if(!data.schedules.length){ box.appendChild(el('div','empty','아직 일정이 없어요.')); return; }
+    if(schedView==='calendar') renderCalendar(box,items); else renderScheduleList(box,items);
+  }
+
+  function renderScheduleList(box,items){
+    if(!items.length){ box.appendChild(el('div','empty','검색 결과가 없어요.')); return; }
     var start=new Date(); start.setHours(0,0,0,0);
     var up=items.filter(function(s){return s.startAt>=start.getTime();});
     var past=items.filter(function(s){return s.startAt<start.getTime();}).reverse();
     [['다가오는 일정',up],['지난 일정',past]].forEach(function(g){
       if(!g[1].length) return;
       box.appendChild(el('h3',null,g[0]+' ('+g[1].length+')'));
-      g[1].forEach(function(s){
-        var r=el('div','ev'+(s.done?' done':''));
-        r.appendChild(el('div','when',fShort.format(s.startAt)));
-        var b=el('div'); b.appendChild(el('div','ttl',(s.done?'✓ ':'')+s.title)); if(s.note) b.appendChild(el('div','note',s.note));
-        r.appendChild(b); box.appendChild(r);
-      });
+      g[1].forEach(function(s){ box.appendChild(evRow(s,false)); });
     });
+  }
+
+  function renderCalendar(box,items){
+    var byDay={};
+    items.forEach(function(s){ var k=dayKey(s.startAt); (byDay[k]=byDay[k]||[]).push(s); });
+    var cal=el('div','cal');
+    ['일','월','화','수','목','금','토'].forEach(function(d,i){ cal.appendChild(el('div','dow'+(i===0?' sun':i===6?' sat':''),d)); });
+    // 그 달 1일이 있는 주의 일요일부터, 그 달이 끝나는 주까지
+    var d=new Date(calMonth); d.setDate(1-d.getDay());
+    var lastDate=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,0).getDate();
+    var cells=Math.ceil((calMonth.getDay()+lastDate)/7)*7;
+    var todayKey=dayKey(new Date());
+    for(var i=0;i<cells;i++){
+      var k=dayKey(d), list=byDay[k]||[], wd=d.getDay();
+      var cell=el('button','day'+(d.getMonth()!==calMonth.getMonth()?' out':'')+(k===todayKey?' today':'')+(wd===0?' sun':wd===6?' sat':'')+(wd===0?' col0':''));
+      cell.type='button'; cell.setAttribute('aria-selected',String(k===calSel));
+      cell.setAttribute('aria-label',fDay.format(d)+(list.length?', 일정 '+list.length+'개':''));
+      cell.appendChild(el('span','n',String(d.getDate())));
+      list.slice(0,3).forEach(function(s){ cell.appendChild(el('span','chip'+(s.done?' done':''),fTime.format(s.startAt)+' '+s.title)); });
+      if(list.length>3) cell.appendChild(el('span','more','+'+(list.length-3)+'개'));
+      if(list.length){ var dots=el('span','dots'); list.slice(0,4).forEach(function(){ dots.appendChild(el('i')); }); cell.appendChild(dots); }
+      (function(key,date){ cell.onclick=function(){
+        calSel=key;
+        if(date.getMonth()!==calMonth.getMonth()){ calMonth=new Date(date); calMonth.setDate(1); }
+        renderSchedules();
+        var dh=$('dayEvents'); if(dh&&innerWidth<760) dh.scrollIntoView({behavior:'smooth',block:'start'});
+      }; })(k,new Date(d));
+      cal.appendChild(cell);
+      d.setDate(d.getDate()+1);
+    }
+    box.appendChild(cal);
+
+    // 고른 날의 일정
+    var p=calSel.split('-'), sel=new Date(+p[0],+p[1]-1,+p[2]);
+    var dayBox=el('div'); dayBox.id='dayEvents';
+    var list=byDay[calSel]||[];
+    dayBox.appendChild(el('h3',null,fDay.format(sel)+(list.length?' ('+list.length+')':'')));
+    if(!list.length) dayBox.appendChild(el('div','empty-day',$('q').value.trim()?'이 날은 검색 결과가 없어요.':'이 날은 일정이 없어요.'));
+    list.forEach(function(s){ dayBox.appendChild(evRow(s,true)); });
+    box.appendChild(dayBox);
   }
 
   function render(){
