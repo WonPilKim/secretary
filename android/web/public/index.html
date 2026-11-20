@@ -27,7 +27,11 @@ nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 85%,
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;text-decoration:none}
 .brand img{width:32px;height:32px;border-radius:9px}
-nav .links a{margin-left:20px;text-decoration:none;color:var(--muted);font-size:15px}
+nav .links{display:flex;align-items:center;gap:20px}
+nav .links a{text-decoration:none;color:var(--muted);font-size:15px}
+nav .links .sec{display:flex;gap:20px;padding-right:20px;border-right:1px solid var(--line)}
+nav .links .top{color:var(--fg);font-weight:700}
+nav .links .login{color:var(--bg);background:var(--accent);padding:8px 16px;border-radius:999px;font-weight:700}
 .hero{background:linear-gradient(135deg,#6D64F5,#4F46E5 55%,#3730A3);color:#fff;overflow:hidden;position:relative}
 .hero::before{content:"";position:absolute;width:560px;height:560px;border-radius:50%;background:rgba(255,255,255,.06);right:-160px;top:-220px}
 .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding-top:72px;padding-bottom:0;position:relative}
@@ -73,7 +77,7 @@ footer a{margin-right:18px}
   .grid{grid-template-columns:repeat(2,1fr)}
   .how,.trust ul,.video{grid-template-columns:1fr}
   h2{font-size:28px} section{padding:64px 0}
-  nav .links a:not(:nth-last-child(-n+2)){display:none} nav .links a{margin-left:14px}
+  nav .links .sec{display:none} nav .links{gap:14px} nav .links a{font-size:14px} nav .links .login{padding:7px 13px}
 }
 @media (max-width:480px){.hero p br{display:none}.grid{grid-template-columns:1fr}.hero h1{font-size:32px}}
 </style>
@@ -81,7 +85,10 @@ footer a{margin-right:18px}
 <body>
 <nav><div class="wrap">
   <a class="brand" href="/"><img src="/icon.png" alt="">말비서</a>
-  <div class="links"><a href="#features">기능</a><a href="#video">영상</a><a href="#screens">화면</a><a href="/support">고객지원</a><a href="/my">내 기록</a></div>
+  <div class="links">
+    <span class="sec"><a href="#features">기능</a><a href="#video">영상</a><a href="#screens">화면</a></span>
+    <a class="top" href="/support">고객지원</a><a class="top" href="/my">내 기록 보기</a><a class="login" href="/my">로그인</a>
+  </div>
 </div></nav>
 
 <header class="hero"><div class="wrap">
