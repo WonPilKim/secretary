@@ -32,6 +32,9 @@ nav .links a{text-decoration:none;color:var(--muted);font-size:15px}
 nav .links .sec{display:flex;gap:20px;padding-right:20px;border-right:1px solid var(--line)}
 nav .links .top{color:var(--fg);font-weight:700}
 nav .links .login{color:var(--bg);background:var(--accent);padding:8px 16px;border-radius:999px;font-weight:700}
+nav .links .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:999px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0;flex:none}
+nav .links .icon-btn:hover,nav .links .icon-btn:focus-visible{color:var(--accent);background:var(--soft)}
+nav .links .login.user + .icon-btn{margin-left:-12px}
 nav .links .login.user{color:var(--accent);background:var(--soft);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hero{background:linear-gradient(135deg,#6D64F5,#4F46E5 55%,#3730A3);color:#fff;overflow:hidden;position:relative}
 .hero::before{content:"";position:absolute;width:560px;height:560px;border-radius:50%;background:rgba(255,255,255,.06);right:-160px;top:-220px}
