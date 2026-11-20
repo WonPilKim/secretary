@@ -73,7 +73,7 @@ footer a{margin-right:18px}
   .grid{grid-template-columns:repeat(2,1fr)}
   .how,.trust ul,.video{grid-template-columns:1fr}
   h2{font-size:28px} section{padding:64px 0}
-  nav .links a:not(:last-child){display:none}
+  nav .links a:not(:nth-last-child(-n+2)){display:none} nav .links a{margin-left:14px}
 }
 @media (max-width:480px){.hero p br{display:none}.grid{grid-template-columns:1fr}.hero h1{font-size:32px}}
 </style>
@@ -81,7 +81,7 @@ footer a{margin-right:18px}
 <body>
 <nav><div class="wrap">
   <a class="brand" href="/"><img src="/icon.png" alt="">말비서</a>
-  <div class="links"><a href="#features">기능</a><a href="#video">영상</a><a href="#screens">화면</a><a href="/support">고객지원</a></div>
+  <div class="links"><a href="#features">기능</a><a href="#video">영상</a><a href="#screens">화면</a><a href="/support">고객지원</a><a href="/my">내 기록</a></div>
 </div></nav>
 
 <header class="hero"><div class="wrap">
@@ -91,7 +91,7 @@ footer a{margin-right:18px}
     <p>회의를 실시간으로 받아 적고 핵심만 요약해 주는 음성 비서.<br>메모와 일정도 말 한마디로 끝내세요.</p>
     <div class="btns">
       <a class="btn primary" href="https://play.google.com/store/apps/details?id=com.malbiseo">▶ Google Play에서 받기</a>
-      <a class="btn ghost" href="#features">기능 둘러보기</a>
+      <a class="btn ghost" href="/my">내 기록 보기</a>
     </div>
   </div>
   <div class="shot"><img src="/img/shot1.jpg" alt="실시간 회의 받아쓰기 화면"></div>
@@ -160,7 +160,7 @@ footer a{margin-right:18px}
 </div></section>
 
 <footer><div class="wrap">
-  <div><a href="/privacy">개인정보처리방침</a><a href="/support">고객지원</a><a href="/terms">이용약관</a><a href="/delete-account">계정 삭제</a><a href="mailto:kwpteam@gmail.com">문의</a></div>
+  <div><a href="/my">내 기록 보기</a><a href="/privacy">개인정보처리방침</a><a href="/support">고객지원</a><a href="/terms">이용약관</a><a href="/delete-account">계정 삭제</a><a href="mailto:kwpteam@gmail.com">문의</a></div>
   <div>© 2026 말비서 · 김원필</div>
 </div></footer>
 </body>

@@ -1,0 +1,310 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>내 기록 - 말비서</title><meta name="robots" content="noindex">
+<link rel="stylesheet" href="/style.css"><link rel="icon" href="/icon.png">
+<style>
+main.wide{max-width:1100px}
+.login{max-width:400px;margin:40px auto 0}
+.login .box{padding:24px}
+.login h1{font-size:24px}
+.field{margin:14px 0}
+.field label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.row{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.err{color:#dc2626;font-size:14px;min-height:20px;margin-top:10px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.topbar h1{font-size:24px;margin:0}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tab{font:inherit;font-weight:600;background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--accent);border-color:var(--accent)}
+.search{margin-bottom:14px}
+.split{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.list{display:flex;flex-direction:column;gap:8px;max-height:72vh;overflow:auto;padding-right:2px}
+.item{text-align:left;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;width:100%}
+.item[aria-current=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.item .t{font-weight:700;display:flex;gap:6px;align-items:center}
+.item .t span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .s{font-size:13px;color:var(--muted);margin-top:2px}
+.pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);flex:none}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;min-height:300px}
+.detail h2{border:0;margin:0 0 4px;padding:0;font-size:22px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px}
+.sumbox{background:color-mix(in srgb,var(--accent) 8%,var(--card));border-radius:12px;padding:14px 16px;margin:14px 0;white-space:pre-wrap}
+.label{font-weight:700;margin:18px 0 6px}
+.transcript{white-space:pre-wrap;line-height:1.75}
+.ts{color:var(--accent);font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:48px 16px}
+.memos{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.memo{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.memo .txt{white-space:pre-wrap;flex:1}
+.memo .foot{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.sched h3{font-size:16px;margin:20px 0 8px}
+.ev{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:8px}
+.ev .when{flex:none;width:118px;color:var(--accent);font-weight:700;font-size:14px}
+.ev.done{opacity:.55}.ev.done .ttl{text-decoration:line-through}
+.ev .note{color:var(--muted);font-size:14px;white-space:pre-wrap}
+.note-ro{font-size:13px;color:var(--muted);margin-top:24px}
+.hidden{display:none!important}
+@media (max-width:760px){.split{grid-template-columns:1fr}.list{max-height:none}.ev{flex-direction:column;gap:4px}.ev .when{width:auto}}
+@media print{body{background:#fff;color:#000}.topbar,.tabs,.search,.list,.actions,.note-ro,.back{display:none!important}.split{display:block}.detail{border:0;padding:0}}
+</style></head>
+<body><main class="wide">
+<p class="back" style="margin:0 0 16px"><a href="/">← 말비서 홈</a></p>
+
+<!-- 로그인 -->
+<section id="loginView" class="login hidden" style="padding:0">
+  <header><img src="/icon.png" alt=""><h1>내 기록 보기</h1></header>
+  <p class="meta">말비서 앱과 같은 아이디·비밀번호로 로그인하세요.</p>
+  <form id="loginForm" class="box" novalidate>
+    <div class="field"><label for="lid">아이디</label><input type="text" id="lid" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20"></div>
+    <div class="field"><label for="lpw">비밀번호</label><input type="password" id="lpw" autocomplete="current-password" maxlength="100"></div>
+    <label class="row" style="margin:6px 0 16px"><input type="checkbox" id="remember"> 로그인 상태 유지 <span style="font-size:12px">(공용 PC에서는 체크하지 마세요)</span></label>
+    <button class="submit" id="loginBtn" type="submit">로그인</button>
+    <div class="err" id="loginErr" role="alert"></div>
+  </form>
+  <p class="meta" style="font-size:14px">아직 계정이 없다면 말비서 앱에서 가입해 주세요. 비밀번호를 잊으셨다면 <a href="/support?type=account">고객지원</a>으로 문의해 주세요.</p>
+</section>
+
+<!-- 내 기록 -->
+<section id="appView" class="hidden" style="padding:0">
+  <div class="topbar">
+    <h1 id="hello">내 기록</h1>
+    <div style="display:flex;gap:8px"><button class="btn" id="reload" type="button">↻ 새로고침</button><button class="btn" id="logout" type="button">로그아웃</button></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="meetings" aria-selected="true">회의록 <span id="cMeetings"></span></button>
+    <button class="tab" role="tab" data-tab="memos" aria-selected="false">메모 <span id="cMemos"></span></button>
+    <button class="tab" role="tab" data-tab="schedules" aria-selected="false">일정 <span id="cSchedules"></span></button>
+  </div>
+  <input type="text" class="search" id="q" placeholder="검색">
+  <div id="status" class="empty">불러오는 중…</div>
+
+  <div id="pMeetings" class="split hidden">
+    <div class="list" id="meetingList"></div>
+    <article class="detail" id="meetingDetail"></article>
+  </div>
+  <div id="pMemos" class="memos hidden"></div>
+  <div id="pSchedules" class="sched hidden"></div>
+  <p class="note-ro">웹에서는 기록을 보고 복사·저장만 할 수 있어요. 수정과 삭제는 앱에서 해 주세요.</p>
+</section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var API_KEY='AIzaSyDb_alfaWKBb4dMLj9MSojEmJEu_LFpObI';
+  var PROJECT='malbiseo-6edb9';
+  var DOMAIN='malbiseo.app';
+  var DB='https://firestore.googleapis.com/v1/projects/'+PROJECT+'/databases/(default)/documents/';
+  var KEY='malbiseo.session';
+  var $=function(id){return document.getElementById(id);};
+
+  // ───── 세션 (로그인 유지: localStorage, 아니면 sessionStorage) ─────
+  var session=null;
+  function store(){ try{ return localStorage.getItem(KEY)?localStorage:sessionStorage; }catch(e){ return null; } }
+  function loadSession(){ try{ var s=localStorage.getItem(KEY)||sessionStorage.getItem(KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+  function saveSession(s,remember){
+    try{ localStorage.removeItem(KEY); sessionStorage.removeItem(KEY);
+      (remember?localStorage:sessionStorage).setItem(KEY,JSON.stringify(s)); }catch(e){}
+  }
+  function clearSession(){ session=null; try{ localStorage.removeItem(KEY); sessionStorage.removeItem(KEY);}catch(e){} }
+
+  function authError(code){
+    code=String(code||'');
+    if(/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND|INVALID_EMAIL/.test(code)) return '아이디 또는 비밀번호가 맞지 않아요.';
+    if(/TOO_MANY_ATTEMPTS/.test(code)) return '시도가 너무 많아요. 잠시 후 다시 시도해 주세요.';
+    if(/USER_DISABLED/.test(code)) return '사용할 수 없는 계정이에요.';
+    return '로그인하지 못했어요. 인터넷 연결을 확인해 주세요.';
+  }
+
+  async function signIn(id,pw,remember){
+    var r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+API_KEY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:id+'@'+DOMAIN,password:pw,returnSecureToken:true})});
+    var d=await r.json();
+    if(!r.ok) throw new Error(authError(d&&d.error&&d.error.message));
+    session={uid:d.localId,loginId:id,idToken:d.idToken,refreshToken:d.refreshToken,exp:Date.now()+(Number(d.expiresIn)-60)*1000};
+    saveSession(session,remember);
+  }
+
+  async function token(){
+    if(!session) throw new Error('auth');
+    if(Date.now()<session.exp) return session.idToken;
+    var r=await fetch('https://securetoken.googleapis.com/v1/token?key='+API_KEY,{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(session.refreshToken)});
+    if(!r.ok) throw new Error('auth');
+    var d=await r.json();
+    session.idToken=d.id_token; session.refreshToken=d.refresh_token; session.exp=Date.now()+(Number(d.expires_in)-60)*1000;
+    var s=store(); if(s) try{ s.setItem(KEY,JSON.stringify(session)); }catch(e){}
+    return session.idToken;
+  }
+
+  // ───── Firestore 읽기 ─────
+  function val(v){
+    if(!v) return null;
+    if('stringValue' in v) return v.stringValue;
+    if('integerValue' in v) return Number(v.integerValue);
+    if('doubleValue' in v) return v.doubleValue;
+    if('booleanValue' in v) return v.booleanValue;
+    if('timestampValue' in v) return Date.parse(v.timestampValue);
+    return null;
+  }
+  function obj(doc){ var o={id:doc.name.split('/').pop()}; var f=doc.fields||{}; for(var k in f) o[k]=val(f[k]); return o; }
+
+  async function get(path){
+    var r=await fetch(DB+path,{headers:{Authorization:'Bearer '+await token()}});
+    if(r.status===401||r.status===403) throw new Error('auth');
+    if(r.status===404) return null;
+    if(!r.ok) throw new Error('load');
+    return r.json();
+  }
+  async function list(col,orderBy){
+    var out=[],page='';
+    do{
+      var d=await get('users/'+session.uid+'/'+col+'?pageSize=300&orderBy='+encodeURIComponent(orderBy)+(page?'&pageToken='+encodeURIComponent(page):''));
+      (d&&d.documents||[]).forEach(function(x){out.push(obj(x));});
+      page=d&&d.nextPageToken;
+    }while(page);
+    return out;
+  }
+
+  // ───── 화면 ─────
+  var data={meetings:[],memos:[],schedules:[]}, tab='meetings', selected=null;
+  var fDate=new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'});
+  var fShort=new Intl.DateTimeFormat('ko-KR',{month:'numeric',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'});
+  function dur(s){ s=s||0; var m=Math.floor(s/60),r=s%60; return m?(m+'분 '+r+'초'):(r+'초'); }
+  function el(tag,cls,text){ var e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+  function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); }
+  function match(s){ var q=$('q').value.trim().toLowerCase(); return !q||String(s||'').toLowerCase().indexOf(q)>=0; }
+
+  function copy(text,btn){
+    var done=function(){ var o=btn.textContent; btn.textContent='✓ 복사됨'; setTimeout(function(){btn.textContent=o;},1500); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done,function(){fallback();});
+    else fallback();
+    function fallback(){ var t=el('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');done();}catch(e){} t.remove(); }
+  }
+  function download(name,text){
+    var b=new Blob(['﻿'+text],{type:'text/plain;charset=utf-8'});
+    var a=el('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+  }
+  function meetingText(m){
+    var t=m.title+'\n'+fDate.format(m.createdAt)+' · '+dur(m.durationSec)+'\n\n';
+    if(m.summary) t+=m.summary+'\n\n';
+    return t+'— 녹취록 —\n'+(m.transcript||'');
+  }
+  function safeName(s){ return String(s||'회의록').replace(/[\\/:*?"<>|]+/g,' ').trim().slice(0,60)||'회의록'; }
+
+  function renderMeetings(){
+    var listEl=$('meetingList'),det=$('meetingDetail'); clear(listEl); clear(det);
+    var items=data.meetings.filter(function(m){return match(m.title)||match(m.transcript)||match(m.summary);});
+    if(!items.length){ listEl.appendChild(el('div','empty',data.meetings.length?'검색 결과가 없어요.':'아직 회의록이 없어요.')); det.appendChild(el('div','empty','앱에서 회의를 기록하면 여기에서 볼 수 있어요.')); return; }
+    if(!selected||!items.some(function(m){return m.id===selected;})) selected=items[0].id;
+    items.forEach(function(m){
+      var b=el('button','item'); b.type='button'; b.setAttribute('aria-current',String(m.id===selected));
+      var t=el('div','t'); t.appendChild(el('span',null,m.title||'제목 없는 회의')); if(m.summary) t.appendChild(el('span','pill','요약'));
+      b.appendChild(t); b.appendChild(el('div','s',fShort.format(m.createdAt)+' · '+dur(m.durationSec)));
+      b.onclick=function(){ selected=m.id; renderMeetings(); if(innerWidth<760) det.scrollIntoView({behavior:'smooth'}); };
+      listEl.appendChild(b);
+    });
+    var m=items.filter(function(x){return x.id===selected;})[0];
+    det.appendChild(el('h2',null,m.title||'제목 없는 회의'));
+    det.appendChild(el('div','meta',fDate.format(m.createdAt)+' · '+dur(m.durationSec)));
+    var a=el('div','actions');
+    var c=el('button','btn','📋 전체 복사'); c.type='button'; c.onclick=function(){copy(meetingText(m),c);};
+    var d=el('button','btn','⬇ 텍스트 파일로 저장'); d.type='button'; d.onclick=function(){download(safeName(m.title)+'.txt',meetingText(m));};
+    var p=el('button','btn','🖨 인쇄 / PDF'); p.type='button'; p.onclick=function(){window.print();};
+    a.appendChild(c); a.appendChild(d); a.appendChild(p); det.appendChild(a);
+    if(m.summary){ det.appendChild(el('div','label','요약')); det.appendChild(el('div','sumbox',m.summary)); }
+    det.appendChild(el('div','label','녹취록'));
+    var tr=el('div','transcript');
+    String(m.transcript||'').split('\n').forEach(function(line,i){
+      if(i) tr.appendChild(document.createTextNode('\n'));
+      var mm=/^(\[[^\]]*\])\s*(.*)$/.exec(line);
+      if(mm){ tr.appendChild(el('span','ts',mm[1]+' ')); tr.appendChild(document.createTextNode(mm[2])); }
+      else tr.appendChild(document.createTextNode(line));
+    });
+    det.appendChild(tr);
+  }
+
+  function renderMemos(){
+    var box=$('pMemos'); clear(box);
+    var items=data.memos.filter(function(m){return match(m.text);});
+    if(!items.length){ box.appendChild(el('div','empty',data.memos.length?'검색 결과가 없어요.':'아직 메모가 없어요.')); return; }
+    items.forEach(function(m){
+      var c=el('div','memo'); c.appendChild(el('div','txt',m.text));
+      var f=el('div','foot'); f.appendChild(el('span',null,fShort.format(m.updatedAt||m.createdAt)));
+      var b=el('button','btn','복사'); b.type='button'; b.style.padding='4px 10px'; b.onclick=function(){copy(m.text,b);};
+      f.appendChild(b); c.appendChild(f); box.appendChild(c);
+    });
+  }
+
+  function renderSchedules(){
+    var box=$('pSchedules'); clear(box);
+    var items=data.schedules.filter(function(s){return match(s.title)||match(s.note);});
+    if(!items.length){ box.appendChild(el('div','empty',data.schedules.length?'검색 결과가 없어요.':'아직 일정이 없어요.')); return; }
+    var start=new Date(); start.setHours(0,0,0,0);
+    var up=items.filter(function(s){return s.startAt>=start.getTime();});
+    var past=items.filter(function(s){return s.startAt<start.getTime();}).reverse();
+    [['다가오는 일정',up],['지난 일정',past]].forEach(function(g){
+      if(!g[1].length) return;
+      box.appendChild(el('h3',null,g[0]+' ('+g[1].length+')'));
+      g[1].forEach(function(s){
+        var r=el('div','ev'+(s.done?' done':''));
+        r.appendChild(el('div','when',fShort.format(s.startAt)));
+        var b=el('div'); b.appendChild(el('div','ttl',(s.done?'✓ ':'')+s.title)); if(s.note) b.appendChild(el('div','note',s.note));
+        r.appendChild(b); box.appendChild(r);
+      });
+    });
+  }
+
+  function render(){
+    document.querySelectorAll('.tab').forEach(function(t){t.setAttribute('aria-selected',String(t.dataset.tab===tab));});
+    $('pMeetings').classList.toggle('hidden',tab!=='meetings');
+    $('pMemos').classList.toggle('hidden',tab!=='memos');
+    $('pSchedules').classList.toggle('hidden',tab!=='schedules');
+    $('q').placeholder=tab==='meetings'?'회의록 검색':tab==='memos'?'메모 검색':'일정 검색';
+    if(tab==='meetings') renderMeetings(); else if(tab==='memos') renderMemos(); else renderSchedules();
+  }
+
+  async function loadAll(){
+    $('status').classList.remove('hidden'); $('status').textContent='불러오는 중…';
+    ['pMeetings','pMemos','pSchedules'].forEach(function(id){$(id).classList.add('hidden');});
+    try{
+      var prof=await get('users/'+session.uid);
+      var name=prof&&prof.fields&&prof.fields.name?val(prof.fields.name):session.loginId;
+      $('hello').textContent=name+'님의 기록';
+      var r=await Promise.all([list('meetings','createdAt desc'),list('memos','createdAt desc'),list('schedules','startAt')]);
+      data={meetings:r[0],memos:r[1],schedules:r[2]};
+      $('cMeetings').textContent=data.meetings.length; $('cMemos').textContent=data.memos.length; $('cSchedules').textContent=data.schedules.length;
+      $('status').classList.add('hidden'); render();
+    }catch(e){
+      if(e.message==='auth'){ clearSession(); showLogin('로그인이 만료됐어요. 다시 로그인해 주세요.'); return; }
+      $('status').textContent='기록을 불러오지 못했어요. 새로고침을 눌러 다시 시도해 주세요.';
+    }
+  }
+
+  function showLogin(msg){ $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); $('loginErr').textContent=msg||''; $('lid').focus(); }
+  function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); loadAll(); }
+
+  $('loginForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var id=$('lid').value.trim().toLowerCase(), pw=$('lpw').value;
+    if(!id||!pw){ $('loginErr').textContent='아이디와 비밀번호를 입력해 주세요.'; return; }
+    if(!/^[a-z0-9_]{4,20}$/.test(id)){ $('loginErr').textContent='아이디 또는 비밀번호가 맞지 않아요.'; return; }
+    var btn=$('loginBtn'); btn.disabled=true; btn.textContent='로그인 중…'; $('loginErr').textContent='';
+    try{ await signIn(id,pw,$('remember').checked); $('lpw').value=''; showApp(); }
+    catch(err){ $('loginErr').textContent=err.message; }
+    finally{ btn.disabled=false; btn.textContent='로그인'; }
+  });
+  $('logout').onclick=function(){ clearSession(); data={meetings:[],memos:[],schedules:[]}; selected=null; showLogin(); };
+  $('reload').onclick=loadAll;
+  $('q').addEventListener('input',render);
+  document.querySelectorAll('.tab').forEach(function(t){ t.onclick=function(){ tab=t.dataset.tab; $('q').value=''; render(); }; });
+
+  session=loadSession();
+  if(session&&session.uid) showApp(); else showLogin();
+})();
+</script>
+</body></html>

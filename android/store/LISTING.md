@@ -148,6 +148,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | https://malbiseo.kr/delete-account | `delete-account.html` |
 | https://malbiseo.kr/terms | `terms.html` |
 | https://malbiseo.kr/support | `support.html` (자주 묻는 질문 + 문의·오류 신고 양식) |
+| https://malbiseo.kr/my | `my.html` (앱 계정으로 로그인해 회의록·메모·일정 보기, 복사·저장·인쇄) |
 
 ### 6-1. 올리기 (처음 한 번 설치)
 1. Node.js(nodejs.org, LTS 버전)를 설치합니다.
