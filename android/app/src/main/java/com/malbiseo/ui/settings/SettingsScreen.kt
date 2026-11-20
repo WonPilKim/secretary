@@ -18,6 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
@@ -79,6 +85,11 @@ fun SettingsScreen() {
     var nameDraft by remember { mutableStateOf("") }
     val user = LocalUser.current
     val data = LocalUserData.current
+    val legacy = remember(user) { context.app().auth.isLegacyAccount() }
+    val speaker = context.app().speaker
+    val speakReplies by remember { settings.speakReplies }.collectAsState(initial = true)
+    val speakTyped by remember { settings.speakTyped }.collectAsState(initial = false)
+    var showEmailDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         apiKey = settings.apiKey.first()
@@ -113,12 +124,26 @@ fun SettingsScreen() {
                             }
                         }
                         Text(
-                            "아이디 ${user.loginId}",
+                            if (legacy) "아이디 ${user.loginId}" else user.loginId,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     OutlinedButton(onClick = { askLogout = true }) { Text("로그아웃") }
+                }
+                // 예전 아이디 계정: 진짜 이메일이 없어 비밀번호 찾기를 못 쓰므로 등록을 권한다
+                if (legacy) {
+                    Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                        Text(
+                            "이메일을 등록하면 비밀번호를 잊었을 때 찾을 수 있고, 이메일로 로그인하게 돼요.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { showEmailDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text("이메일 등록")
+                        }
+                    }
                 }
             }
 
@@ -174,6 +199,31 @@ fun SettingsScreen() {
                 else
                     "사용 불가 — Google 앱 또는 음성 인식 서비스를 설치/업데이트해 주세요.",
             )
+
+            HorizontalDivider()
+
+            Text("음성 답변", style = MaterialTheme.typography.titleMedium)
+            SwitchRow(
+                title = "답변 소리로 읽어주기",
+                desc = "마이크로 말하면 비서가 대답을 소리 내어 읽어줘요. 비서 말풍선을 누르면 다시 들을 수 있어요.",
+                checked = speakReplies,
+                onChange = { on -> scope.launch { settings.setSpeakReplies(on) }; if (!on) speaker.stop() },
+            )
+            SwitchRow(
+                title = "글자로 입력할 때도 읽어주기",
+                desc = "끄면 마이크로 물어봤을 때만 읽어줘요.",
+                checked = speakTyped,
+                enabled = speakReplies,
+                onChange = { on -> scope.launch { settings.setSpeakTyped(on) } },
+            )
+            if (speaker.available == false) {
+                Text(
+                    "이 폰에서는 한국어 음성을 쓸 수 없어요. 설정 → 일반 → 텍스트 음성 변환(TTS)에서 한국어 음성을 내려받아 주세요.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
 
             HorizontalDivider()
 
@@ -293,6 +343,96 @@ fun SettingsScreen() {
             dismissButton = { TextButton(onClick = { editName = false }) { Text("취소") } },
         )
     }
+
+    if (showEmailDialog) {
+        RegisterEmailDialog(onDismiss = { showEmailDialog = false })
+    }
+}
+
+@Composable
+private fun SwitchRow(
+    title: String,
+    desc: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
+    Row(
+        Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+    }
+}
+
+/** 예전 아이디 계정에 진짜 이메일 등록. 새 주소로 온 확인 링크를 눌러야 바뀐다. */
+@Composable
+private fun RegisterEmailDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var sent by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("이메일 등록") },
+        text = {
+            if (sent) {
+                Text("$email 주소로 확인 메일을 보냈어요.\n메일의 링크를 누르면 등록이 끝나고, 그다음부터는 이 이메일로 로그인해 주세요. (이 폰에서는 다시 로그인하라고 나올 수 있어요)")
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = email, onValueChange = { email = it.trim(); error = null },
+                        label = { Text("이메일") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = password, onValueChange = { password = it; error = null },
+                        label = { Text("지금 비밀번호") }, singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                }
+            }
+        },
+        confirmButton = {
+            if (sent) {
+                TextButton(onClick = onDismiss) { Text("확인") }
+            } else {
+                TextButton(enabled = !busy, onClick = {
+                    busy = true
+                    scope.launch {
+                        try {
+                            context.app().auth.changeEmail(email, password)
+                            sent = true
+                        } catch (e: Exception) {
+                            error = e.message ?: "등록하지 못했어요."
+                        } finally {
+                            busy = false
+                        }
+                    }
+                }) { Text(if (busy) "보내는 중…" else "확인 메일 보내기") }
+            }
+        },
+        dismissButton = if (sent) null else {
+            { TextButton(onClick = onDismiss) { Text("취소") } }
+        },
+    )
 }
 
 /** 개인정보처리방침 주소 (android/web/public/privacy.html 을 Firebase Hosting + malbiseo.kr 로 배포) */

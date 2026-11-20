@@ -15,6 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.semantics.Role
+import kotlinx.coroutines.flow.first
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -65,7 +72,8 @@ val LocalUserData = staticCompositionLocalOf<UserData> { error("로그인한 사
 
 @Composable
 fun AuthScreen() {
-    val auth = LocalContext.current.app().auth
+    val app = LocalContext.current.app()
+    val auth = app.auth
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
 
@@ -75,8 +83,16 @@ fun AuthScreen() {
     var password by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var showPw by remember { mutableStateOf(false) }
+    var autoLogin by rememberSaveable { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var showReset by remember { mutableStateOf(false) }
+
+    // 마지막으로 쓴 이메일과 자동 로그인 선택을 불러온다
+    LaunchedEffect(Unit) {
+        if (loginId.isEmpty()) loginId = app.settings.lastLoginId.first()
+        autoLogin = app.settings.autoLogin.first()
+    }
 
     fun submit() {
         if (busy) return
@@ -85,6 +101,8 @@ fun AuthScreen() {
         error = null
         scope.launch {
             try {
+                // 로그인되면 이 화면이 바로 사라지므로 설정은 먼저 저장한다
+                app.settings.saveLogin(autoLogin, loginId)
                 if (signUp) auth.signUp(name, loginId, password, confirm)
                 else auth.login(loginId, password)
             } catch (e: AuthException) {
@@ -167,12 +185,15 @@ fun AuthScreen() {
             }
             OutlinedTextField(
                 value = loginId, onValueChange = { loginId = it.trim(); error = null },
-                label = { Text("아이디") }, singleLine = true,
-                supportingText = if (signUp) {
-                    { Text("영문 소문자·숫자·_ 4~20자") }
-                } else null,
+                label = { Text("이메일") }, singleLine = true,
+                supportingText = {
+                    Text(
+                        if (signUp) "비밀번호를 잊었을 때 이 주소로 재설정 메일을 보내요"
+                        else "예전에 아이디로 가입했다면 아이디를 입력하세요"
+                    )
+                },
                 shape = fieldShape, colors = fieldColors,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
@@ -209,6 +230,23 @@ fun AuthScreen() {
             }
         }
 
+        // 자동 로그인 / 비밀번호 찾기
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.clip(RoundedCornerShape(8.dp)).toggleable(
+                    value = autoLogin, role = Role.Checkbox, onValueChange = { autoLogin = it },
+                ).padding(end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = autoLogin, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+                Text("자동 로그인", style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.weight(1f))
+            if (!signUp) {
+                TextButton(onClick = { showReset = true; error = null }) { Text("비밀번호 찾기") }
+            }
+        }
+
         error?.let {
             Spacer(Modifier.height(12.dp))
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -231,4 +269,63 @@ fun AuthScreen() {
         )
         Spacer(Modifier.height(40.dp))
     }
+
+    if (showReset) {
+        PasswordResetDialog(initialEmail = loginId, onDismiss = { showReset = false })
+    }
+}
+
+/** 이메일을 받아 비밀번호 재설정 메일을 보낸다 */
+@Composable
+private fun PasswordResetDialog(initialEmail: String, onDismiss: () -> Unit) {
+    val auth = LocalContext.current.app().auth
+    val scope = rememberCoroutineScope()
+    var email by remember { mutableStateOf(initialEmail.takeIf { '@' in it } ?: "") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var sent by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("비밀번호 찾기") },
+        text = {
+            if (sent) {
+                Text("$email 주소로 가입되어 있다면 비밀번호 재설정 메일을 보냈어요.\n메일의 링크에서 새 비밀번호를 정한 뒤 다시 로그인해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.")
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("가입한 이메일을 입력하면 비밀번호를 새로 정할 수 있는 링크를 보내드려요.")
+                    OutlinedTextField(
+                        value = email, onValueChange = { email = it.trim(); error = null },
+                        label = { Text("이메일") }, singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (sent) {
+                TextButton(onClick = onDismiss) { Text("확인") }
+            } else {
+                TextButton(enabled = !busy, onClick = {
+                    busy = true
+                    scope.launch {
+                        try {
+                            auth.sendPasswordReset(email)
+                            sent = true
+                        } catch (e: AuthException) {
+                            error = e.message
+                        } finally {
+                            busy = false
+                        }
+                    }
+                }) { Text(if (busy) "보내는 중…" else "메일 보내기") }
+            }
+        },
+        dismissButton = if (sent) null else {
+            { TextButton(onClick = onDismiss) { Text("취소") } }
+        },
+    )
 }

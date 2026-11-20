@@ -9,6 +9,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,24 +95,30 @@ fun ChatScreen(onNavigate: (String) -> Unit) {
     }.collectAsState(initial = emptyList())
     val next = todaySchedules.firstOrNull { !it.done && it.startAt >= System.currentTimeMillis() }
 
-    fun send(raw: String) {
+    val speakReplies by remember { app.settings.speakReplies }.collectAsState(initial = true)
+    val speakTyped by remember { app.settings.speakTyped }.collectAsState(initial = false)
+
+    /** [byVoice]: 마이크로 말한 명령인지. 설정에 따라 답변을 소리로 읽어준다 */
+    fun send(raw: String, byVoice: Boolean = false) {
         val text = raw.trim()
         if (text.isEmpty()) return
         messages.add(ChatMessage(text, fromUser = true))
         input = ""
         scope.launch {
-            when (val r = handler.handle(text)) {
-                is CommandResult.Reply -> messages.add(ChatMessage(r.text, fromUser = false))
-                is CommandResult.Navigate -> {
-                    messages.add(ChatMessage(r.text, fromUser = false))
-                    onNavigate(r.route)
-                }
+            val r = handler.handle(text)
+            val reply = when (r) {
+                is CommandResult.Reply -> r.text
+                is CommandResult.Navigate -> r.text
             }
+            messages.add(ChatMessage(reply, fromUser = false))
+            if (speakReplies && (byVoice || speakTyped)) app.speaker.speak(reply)
+            if (r is CommandResult.Navigate) onNavigate(r.route)
         }
     }
 
-    val speech = rememberSpeechController { send(it) }
-    val startMic = rememberWithMicPermission { speech.start() }
+    val speech = rememberSpeechController { send(it, byVoice = true) }
+    // 읽어주는 소리를 마이크가 받아 적지 않도록 듣기 전에 멈춘다
+    val startMic = rememberWithMicPermission { app.speaker.stop(); speech.start() }
 
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
@@ -163,7 +170,10 @@ fun ChatScreen(onNavigate: (String) -> Unit) {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(messages) { Bubble(it) }
+            items(messages) { msg ->
+                // 비서 말풍선을 누르면 다시 읽어준다
+                Bubble(msg, onClick = if (msg.fromUser) null else ({ app.speaker.speak(msg.text) }))
+            }
         }
 
         // 빠른 명령
@@ -270,7 +280,7 @@ private fun ListeningPill(partial: String) {
 }
 
 @Composable
-private fun Bubble(msg: ChatMessage) {
+private fun Bubble(msg: ChatMessage, onClick: (() -> Unit)? = null) {
     val colors = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth(),
@@ -292,7 +302,8 @@ private fun Bubble(msg: ChatMessage) {
             shape = if (msg.fromUser) RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp)
             else RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp),
             border = if (msg.fromUser) null else BorderStroke(1.dp, colors.outlineVariant),
-            modifier = Modifier.widthIn(max = 290.dp),
+            modifier = Modifier.widthIn(max = 290.dp)
+                .then(if (onClick != null) Modifier.clip(RoundedCornerShape(20.dp)).clickable(onClick = onClick) else Modifier),
         ) {
             Text(msg.text, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
         }

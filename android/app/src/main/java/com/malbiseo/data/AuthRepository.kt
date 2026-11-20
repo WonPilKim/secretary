@@ -34,15 +34,18 @@ sealed interface AuthState {
 class AuthException(message: String) : Exception(message)
 
 /**
- * Firebase Authentication 으로 로그인한다.
- * 사용자는 "아이디"만 입력하고, 내부적으로는 "아이디@malbiseo.app" 형태의 이메일 계정으로 만든다.
+ * Firebase Authentication 으로 이메일·비밀번호 로그인을 한다.
  * 비밀번호는 Firebase 가 관리하며 앱이나 Firestore 에는 저장하지 않는다.
- * 로그인 상태는 Firebase 가 기기에 기억해서 앱을 다시 켜도 유지된다.
+ * 로그인 상태는 Firebase 가 기기에 기억해서 앱을 다시 켜도 유지된다 (자동 로그인을 끄면 앱 시작 때 로그아웃).
+ *
+ * 예전 방식으로 가입한 계정은 "아이디@malbiseo.app" 이메일을 쓴다.
+ * 로그인 칸에 @ 없이 아이디만 넣으면 그 계정으로 로그인하고, 설정에서 진짜 이메일로 바꿀 수 있다.
  */
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
     private val profileVersion = MutableStateFlow(0)   // 이름 변경 후 화면 갱신용
+    private val ready = MutableStateFlow(false)        // 앱 시작 때 자동 로그인 확인이 끝났는지
 
     private val firebaseUser: Flow<FirebaseUser?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { trySend(it.currentUser) }
@@ -51,11 +54,11 @@ class AuthRepository {
     }
 
     /**
-     * 로그인 상태. 화면에는 아이디 대신 이름을 보여주므로 이름을 아래 순서로 찾는다.
-     *  1) Firebase 프로필 이름  2) Firestore users/{uid} 의 name  3) 둘 다 없으면 아이디
+     * 로그인 상태. 화면에는 이메일 대신 이름을 보여주므로 이름을 아래 순서로 찾는다.
+     *  1) Firebase 프로필 이름  2) Firestore users/{uid} 의 name  3) 둘 다 없으면 이메일(아이디)
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val state: Flow<AuthState> = combine(firebaseUser, profileVersion) { u, _ -> u?.uid }
+    private val loginState: Flow<AuthState> = combine(firebaseUser, profileVersion) { u, _ -> u?.uid }
         .distinctUntilChanged()
         .flatMapLatest { uid ->
             if (uid == null) flowOf(AuthState.LoggedOut)
@@ -68,6 +71,16 @@ class AuthRepository {
                 AuthState.LoggedIn(User(id = u.uid, name = name, loginId = id))
             }
         }
+
+    /** 자동 로그인 확인([applyAutoLogin])이 끝나기 전에는 Loading */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val state: Flow<AuthState> = ready.flatMapLatest { if (it) loginState else flowOf(AuthState.Loading) }
+
+    /** 앱 시작 때 한 번 부른다. 자동 로그인이 꺼져 있으면 남아 있던 로그인을 지운다. */
+    fun applyAutoLogin(keepLogin: Boolean) {
+        if (!keepLogin) auth.signOut()
+        ready.value = true
+    }
 
     /** Firestore 에 저장된 이름 (없거나 오류면 null) */
     private fun profileName(uid: String): Flow<String?> = callbackFlow {
@@ -91,18 +104,18 @@ class AuthRepository {
         profileVersion.value++
     }
 
-    suspend fun signUp(name: String, loginId: String, password: String, confirm: String) {
+    suspend fun signUp(name: String, email: String, password: String, confirm: String) {
         val n = name.trim()
-        val id = normalize(loginId)
+        val e = normalize(email)
         if (n.isEmpty()) throw AuthException("이름을 입력해 주세요.")
-        if (!ID_RULE.matches(id)) throw AuthException("아이디는 영문 소문자·숫자·_ 4~20자로 입력해 주세요.")
+        if (!EMAIL_RULE.matches(e)) throw AuthException("이메일 주소를 정확히 입력해 주세요.")
         if (password.length < 6) throw AuthException("비밀번호는 6자 이상으로 입력해 주세요.")
         if (password != confirm) throw AuthException("비밀번호가 서로 달라요.")
         try {
-            val user = auth.createUserWithEmailAndPassword(emailOf(id), password).await().user
+            val user = auth.createUserWithEmailAndPassword(e, password).await().user
                 ?: throw AuthException("가입에 실패했어요. 다시 시도해 주세요.")
             db.collection("users").document(user.uid)
-                .set(mapOf("name" to n, "loginId" to id, "createdAt" to System.currentTimeMillis()))
+                .set(mapOf("name" to n, "email" to e, "createdAt" to System.currentTimeMillis()))
             user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(n).build()).await()
             profileVersion.value++
         } catch (e: Exception) {
@@ -110,14 +123,60 @@ class AuthRepository {
         }
     }
 
+    /** [loginId] 는 이메일. @ 가 없으면 예전 방식 아이디로 본다. */
     suspend fun login(loginId: String, password: String) {
-        val id = normalize(loginId)
-        if (id.isEmpty() || password.isEmpty()) throw AuthException("아이디와 비밀번호를 입력해 주세요.")
-        if (!ID_RULE.matches(id)) throw AuthException("아이디 또는 비밀번호가 맞지 않아요.")
+        val input = normalize(loginId)
+        if (input.isEmpty() || password.isEmpty()) throw AuthException("이메일과 비밀번호를 입력해 주세요.")
+        val email = when {
+            EMAIL_RULE.matches(input) -> input
+            ID_RULE.matches(input) -> "$input@$LEGACY_DOMAIN"
+            else -> throw AuthException("이메일 또는 비밀번호가 맞지 않아요.")
+        }
         try {
-            auth.signInWithEmailAndPassword(emailOf(id), password).await()
+            auth.signInWithEmailAndPassword(email, password).await()
         } catch (e: Exception) {
             throw friendly(e)
+        }
+    }
+
+    /**
+     * 비밀번호 재설정 메일 보내기.
+     * 가입 안 된 이메일인지는 알려주지 않는다 (남의 가입 여부 노출 방지). 화면에서는 늘 같은 안내를 한다.
+     */
+    suspend fun sendPasswordReset(email: String) {
+        val e = normalize(email)
+        if (e.endsWith("@$LEGACY_DOMAIN") || ID_RULE.matches(e))
+            throw AuthException("아이디로 가입한 계정은 메일을 받을 수 없어요. 로그인 후 설정에서 이메일을 등록해 주세요.")
+        if (!EMAIL_RULE.matches(e)) throw AuthException("가입한 이메일 주소를 입력해 주세요.")
+        try {
+            auth.setLanguageCode("ko")
+            auth.sendPasswordResetEmail(e).await()
+        } catch (ex: FirebaseAuthInvalidUserException) {
+            // 가입 안 된 이메일: 보낸 것과 똑같이 처리
+        } catch (ex: Exception) {
+            throw friendly(ex)
+        }
+    }
+
+    /** 예전 아이디 계정인지 (진짜 이메일이 없어서 비밀번호 찾기를 못 씀) */
+    fun isLegacyAccount(): Boolean = auth.currentUser?.email?.endsWith("@$LEGACY_DOMAIN") == true
+
+    /**
+     * 로그인 이메일을 [newEmail] 로 바꾼다. 새 주소로 확인 메일이 가고, 링크를 누르면 바뀐다.
+     * 보안상 지금 비밀번호를 한 번 더 확인한다.
+     */
+    suspend fun changeEmail(newEmail: String, password: String) {
+        val e = normalize(newEmail)
+        if (!EMAIL_RULE.matches(e)) throw AuthException("이메일 주소를 정확히 입력해 주세요.")
+        if (password.isEmpty()) throw AuthException("지금 비밀번호를 입력해 주세요.")
+        val u = auth.currentUser ?: throw AuthException("로그인이 필요해요.")
+        val current = u.email ?: throw AuthException("이 계정은 이메일을 바꿀 수 없어요.")
+        try {
+            u.reauthenticate(EmailAuthProvider.getCredential(current, password)).await()
+            auth.setLanguageCode("ko")
+            u.verifyBeforeUpdateEmail(e).await()
+        } catch (ex: Exception) {
+            throw friendly(ex)
         }
     }
 
@@ -154,10 +213,10 @@ class AuthRepository {
 
     private fun friendly(e: Exception): AuthException = when (e) {
         is AuthException -> e
-        is FirebaseAuthUserCollisionException -> AuthException("이미 사용 중인 아이디예요.")
+        is FirebaseAuthUserCollisionException -> AuthException("이미 가입된 이메일이에요.")
         is FirebaseAuthWeakPasswordException -> AuthException("비밀번호는 6자 이상으로 입력해 주세요.")
         is FirebaseAuthInvalidUserException,
-        is FirebaseAuthInvalidCredentialsException -> AuthException("아이디 또는 비밀번호가 맞지 않아요.")
+        is FirebaseAuthInvalidCredentialsException -> AuthException("이메일 또는 비밀번호가 맞지 않아요.")
         is FirebaseAuthRecentLoginRequiredException -> AuthException("보안을 위해 다시 로그인한 뒤 시도해 주세요.")
         is FirebaseNetworkException -> AuthException("인터넷 연결을 확인해 주세요.")
         is FirebaseTooManyRequestsException -> AuthException("시도가 너무 많아요. 잠시 후 다시 시도해 주세요.")
@@ -165,12 +224,17 @@ class AuthRepository {
     }
 
     private fun normalize(s: String) = s.trim().lowercase()
-    private fun emailOf(id: String) = "$id@$DOMAIN"
-    private fun loginIdOf(u: FirebaseUser) = u.email?.substringBefore('@') ?: u.uid.take(8)
+
+    /** 화면에 보여줄 로그인 정보: 이메일, 예전 계정이면 아이디 */
+    private fun loginIdOf(u: FirebaseUser): String {
+        val email = u.email ?: return u.uid.take(8)
+        return if (email.endsWith("@$LEGACY_DOMAIN")) email.substringBefore('@') else email
+    }
 
     companion object {
-        private const val DOMAIN = "malbiseo.app"
+        private const val LEGACY_DOMAIN = "malbiseo.app"
         private val ID_RULE = Regex("^[a-z0-9_]{4,20}$")
         private val USER_COLLECTIONS = listOf("memos", "meetings", "schedules")
+        private val EMAIL_RULE = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
     }
 }

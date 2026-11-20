@@ -188,7 +188,8 @@ fun MeetingRecordScreen(onSaved: (Long) -> Unit, onBack: () -> Unit) {
     val speech = rememberSpeechController(continuous = true) { heard ->
         lines.add("[${formatDuration(elapsed)}] $heard")
     }
-    val startMic = rememberWithMicPermission { speech.start() }
+    // 비서가 읽던 답변이 녹취록에 섞이지 않도록 멈추고 시작
+    val startMic = rememberWithMicPermission { context.app().speaker.stop(); speech.start() }
 
     // 녹취 중에는 화면이 꺼지지 않게 (꺼지면 음성 인식이 멈춤)
     val view = LocalView.current
