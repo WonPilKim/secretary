@@ -148,6 +148,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | https://malbiseo.kr/delete-account | `delete-account.html` |
 | https://malbiseo.kr/terms | `terms.html` |
 | https://malbiseo.kr/support | `support.html` (자주 묻는 질문 + 문의·오류 신고 양식) |
+| https://malbiseo.kr/admin | `admin.html` (관리자 전용: 문의 보기·처리 완료·삭제·답장) |
 | https://malbiseo.kr/my | `my.html` (앱 계정으로 로그인해 회의록·메모·일정 보기, 복사·저장·인쇄) |
 
 ### 6-1. 올리기 (처음 한 번 설치)
@@ -190,3 +191,28 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
   - 답변은 `email`로 직접 보내고, 처리 후 `status`를 `done`으로 바꿔 두면 관리하기 편합니다.
   - 처리 완료 후 1년 이내에 삭제합니다 (개인정보처리방침에 약속한 내용).
 - 새 문의 알림은 따로 오지 않으니 주기적으로 확인하세요.
+
+## 8. 관리자 계정 (malbiseo.kr/admin)
+
+관리자 권한은 Firestore의 `admins/{UID}` 문서로 정합니다. 이 문서는 보안 규칙상 **Firebase 콘솔에서만** 만들 수 있어서, 앱이나 웹에서 스스로 관리자가 될 수 없습니다.
+
+### 관리자 권한 주기
+1. 말비서 앱에서 관리자로 쓸 아이디로 **회원가입**합니다.
+2. Firebase 콘솔 → **Authentication → 사용자** → `아이디@malbiseo.app` 줄의 **사용자 UID**를 복사합니다.
+3. **Firestore Database → 데이터 → 컬렉션 시작**
+   - 컬렉션 ID: `admins`
+   - 문서 ID: 복사한 **UID** 붙여넣기 (자동 ID 아님)
+   - 필드: `loginId` (string) = 아이디 *(메모용, 없어도 됨)*
+   - **저장**
+4. 보안 규칙이 최신인지 확인: `firebase deploy --only hosting,firestore:rules`
+5. https://malbiseo.kr/admin 에서 그 아이디로 로그인합니다.
+
+### 관리자 권한 빼기
+Firestore → `admins` → 해당 UID 문서 **삭제**.
+
+### 할 수 있는 것
+- 문의 목록 (처리 전 / 처리 완료 / 전체, 유형별 필터)
+- 문의 내용 보기, **답장 메일 쓰기**(보낸 사람 주소로 메일 앱 열기)
+- **처리 완료로 표시** / 되돌리기, **삭제**
+- 관리자 로그인은 브라우저 창을 닫으면 자동으로 로그아웃됩니다.
+- 관리자도 앱에서는 일반 사용자와 똑같이 동작합니다 (관리자 기능은 웹에만 있음).

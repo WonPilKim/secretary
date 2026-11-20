@@ -1,0 +1,253 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>관리자 - 말비서</title><meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="/style.css"><link rel="icon" href="/icon.png">
+<style>
+main.wide{max-width:1100px}
+.login{max-width:400px;margin:40px auto 0}
+.login h1{font-size:24px}
+.field{margin:14px 0}
+.field label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:#dc2626}
+.btn:disabled{opacity:.5;cursor:wait}
+.err{color:#dc2626;font-size:14px;min-height:20px;margin-top:10px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.topbar h1{font-size:24px;margin:0}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:99px;padding:6px 14px;cursor:pointer}
+.chip[aria-pressed=true]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card));font-weight:700}
+.split{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+.list{display:flex;flex-direction:column;gap:8px;max-height:74vh;overflow:auto}
+.item{text-align:left;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;width:100%}
+.item[aria-current=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.item .t{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .s{font-size:13px;color:var(--muted);margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+.tag.question{background:#dbeafe;color:#1d4ed8}.tag.bug{background:#fee2e2;color:#b91c1c}
+.tag.feature{background:#fef3c7;color:#92400e}.tag.account{background:#ede9fe;color:#6d28d9}
+.tag.new{background:#dcfce7;color:#15803d}.tag.done{background:#e5e7eb;color:#4b5563}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;min-height:300px}
+.detail h2{border:0;margin:6px 0 4px;padding:0;font-size:21px}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:4px 12px;font-size:14px;margin:12px 0;color:var(--muted)}
+.kv b{color:var(--fg);font-weight:600;word-break:break-all}
+.body{white-space:pre-wrap;background:var(--bg);border-radius:12px;padding:14px 16px;margin:12px 0;line-height:1.7}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.empty{color:var(--muted);text-align:center;padding:48px 16px}
+.hidden{display:none!important}
+@media (max-width:760px){.split{grid-template-columns:1fr}.list{max-height:none}}
+</style></head>
+<body><main class="wide">
+<p style="margin:0 0 16px"><a href="/">← 말비서 홈</a></p>
+
+<section id="loginView" class="login hidden" style="padding:0">
+  <header><img src="/icon.png" alt=""><h1>관리자 로그인</h1></header>
+  <p class="meta">관리자 권한이 있는 말비서 계정으로 로그인하세요.</p>
+  <form id="loginForm" class="box" novalidate>
+    <div class="field"><label for="lid">아이디</label><input type="text" id="lid" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20"></div>
+    <div class="field"><label for="lpw">비밀번호</label><input type="password" id="lpw" autocomplete="current-password" maxlength="100"></div>
+    <button class="submit" id="loginBtn" type="submit">로그인</button>
+    <div class="err" id="loginErr" role="alert"></div>
+  </form>
+</section>
+
+<section id="appView" class="hidden" style="padding:0">
+  <div class="topbar">
+    <h1>문의 관리</h1>
+    <div style="display:flex;gap:8px;align-items:center"><span class="meta" id="who" style="margin:0"></span><button class="btn" id="reload" type="button">↻ 새로고침</button><button class="btn" id="logout" type="button">로그아웃</button></div>
+  </div>
+  <div class="filters" id="statusF">
+    <button class="chip" data-s="new" aria-pressed="true">처리 전 <span id="cNew"></span></button>
+    <button class="chip" data-s="done" aria-pressed="false">처리 완료 <span id="cDone"></span></button>
+    <button class="chip" data-s="all" aria-pressed="false">전체 <span id="cAll"></span></button>
+  </div>
+  <div class="filters" id="typeF">
+    <button class="chip" data-t="all" aria-pressed="true">모든 유형</button>
+    <button class="chip" data-t="question" aria-pressed="false">질문</button>
+    <button class="chip" data-t="bug" aria-pressed="false">오류 신고</button>
+    <button class="chip" data-t="feature" aria-pressed="false">기능 제안</button>
+    <button class="chip" data-t="account" aria-pressed="false">계정·데이터</button>
+  </div>
+  <div id="status" class="empty">불러오는 중…</div>
+  <div id="panel" class="split hidden">
+    <div class="list" id="list"></div>
+    <article class="detail" id="detail"></article>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var API_KEY='AIzaSyDb_alfaWKBb4dMLj9MSojEmJEu_LFpObI';
+  var PROJECT='malbiseo-6edb9';
+  var DOMAIN='malbiseo.app';
+  var DB='https://firestore.googleapis.com/v1/projects/'+PROJECT+'/databases/(default)/documents/';
+  var KEY='malbiseo.admin.session';
+  var TYPES={question:'질문',bug:'오류 신고',feature:'기능 제안',account:'계정·데이터'};
+  var $=function(id){return document.getElementById(id);};
+
+  // ───── 로그인 (브라우저 창을 닫으면 로그아웃) ─────
+  var session=null;
+  function load(){ try{ var s=sessionStorage.getItem(KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+  function save(){ try{ sessionStorage.setItem(KEY,JSON.stringify(session)); }catch(e){} }
+  function clearS(){ session=null; try{ sessionStorage.removeItem(KEY); }catch(e){} }
+
+  function authError(code){
+    code=String(code||'');
+    if(/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND|INVALID_EMAIL/.test(code)) return '아이디 또는 비밀번호가 맞지 않아요.';
+    if(/TOO_MANY_ATTEMPTS/.test(code)) return '시도가 너무 많아요. 잠시 후 다시 시도해 주세요.';
+    return '로그인하지 못했어요. 인터넷 연결을 확인해 주세요.';
+  }
+  async function signIn(id,pw){
+    var r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+API_KEY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:id+'@'+DOMAIN,password:pw,returnSecureToken:true})});
+    var d=await r.json();
+    if(!r.ok) throw new Error(authError(d&&d.error&&d.error.message));
+    session={uid:d.localId,loginId:id,idToken:d.idToken,refreshToken:d.refreshToken,exp:Date.now()+(Number(d.expiresIn)-60)*1000};
+  }
+  async function token(){
+    if(!session) throw new Error('auth');
+    if(Date.now()<session.exp) return session.idToken;
+    var r=await fetch('https://securetoken.googleapis.com/v1/token?key='+API_KEY,{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(session.refreshToken)});
+    if(!r.ok) throw new Error('auth');
+    var d=await r.json();
+    session.idToken=d.id_token; session.refreshToken=d.refresh_token; session.exp=Date.now()+(Number(d.expires_in)-60)*1000; save();
+    return session.idToken;
+  }
+
+  // ───── Firestore ─────
+  function val(v){
+    if(!v) return null;
+    if('stringValue' in v) return v.stringValue;
+    if('integerValue' in v) return Number(v.integerValue);
+    if('booleanValue' in v) return v.booleanValue;
+    if('timestampValue' in v) return Date.parse(v.timestampValue);
+    return null;
+  }
+  async function call(path,opt){
+    opt=opt||{}; opt.headers=Object.assign({Authorization:'Bearer '+await token()},opt.headers||{});
+    var r=await fetch(DB+path,opt);
+    if(r.status===401) throw new Error('auth');
+    if(r.status===403) throw new Error('forbidden');
+    if(r.status===404) return null;
+    if(!r.ok) throw new Error('fail');
+    return r.status===204?null:r.json();
+  }
+  async function isAdmin(){
+    try{ return !!(await call('admins/'+session.uid)); }
+    catch(e){ if(e.message==='forbidden') return false; throw e; }
+  }
+  async function listInquiries(){
+    var out=[],page='';
+    do{
+      var d=await call('inquiries?pageSize=300&orderBy='+encodeURIComponent('createdAt desc')+(page?'&pageToken='+encodeURIComponent(page):''));
+      (d&&d.documents||[]).forEach(function(doc){ var o={id:doc.name.split('/').pop()},f=doc.fields||{}; for(var k in f) o[k]=val(f[k]); out.push(o); });
+      page=d&&d.nextPageToken;
+    }while(page);
+    return out;
+  }
+
+  // ───── 화면 ─────
+  var items=[],fs='new',ft='all',selected=null;
+  var fmt=new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'numeric',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit'});
+  function el(tag,cls,text){ var e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+  function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); }
+  function tag(cls,text){ return el('span','tag '+cls,text); }
+
+  function render(){
+    $('cNew').textContent=items.filter(function(i){return i.status!=='done';}).length;
+    $('cDone').textContent=items.filter(function(i){return i.status==='done';}).length;
+    $('cAll').textContent=items.length;
+    document.querySelectorAll('#statusF .chip').forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.s===fs));});
+    document.querySelectorAll('#typeF .chip').forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.t===ft));});
+    var list=$('list'),det=$('detail'); clear(list); clear(det);
+    var shown=items.filter(function(i){
+      var st=i.status==='done'?'done':'new';
+      return (fs==='all'||st===fs)&&(ft==='all'||i.type===ft);
+    });
+    if(!shown.length){ list.appendChild(el('div','empty','해당하는 문의가 없어요.')); det.appendChild(el('div','empty','문의를 선택하면 내용이 여기에 보여요.')); return; }
+    if(!selected||!shown.some(function(i){return i.id===selected;})) selected=shown[0].id;
+    shown.forEach(function(i){
+      var b=el('button','item'); b.type='button'; b.setAttribute('aria-current',String(i.id===selected));
+      b.appendChild(el('div','t',i.title||'(제목 없음)'));
+      var s=el('div','s'); s.appendChild(tag(i.type,TYPES[i.type]||i.type));
+      s.appendChild(tag(i.status==='done'?'done':'new',i.status==='done'?'처리 완료':'처리 전'));
+      s.appendChild(el('span',null,i.createdAt?fmt.format(i.createdAt):'')); b.appendChild(s);
+      b.onclick=function(){ selected=i.id; render(); if(innerWidth<760) det.scrollIntoView({behavior:'smooth'}); };
+      list.appendChild(b);
+    });
+    var it=shown.filter(function(x){return x.id===selected;})[0];
+    var head=el('div'); head.appendChild(tag(it.type,TYPES[it.type]||it.type)); head.appendChild(document.createTextNode(' '));
+    head.appendChild(tag(it.status==='done'?'done':'new',it.status==='done'?'처리 완료':'처리 전')); det.appendChild(head);
+    det.appendChild(el('h2',null,it.title||'(제목 없음)'));
+    var kv=el('div','kv');
+    [['보낸 사람',it.email],['받은 시각',it.createdAt?fmt.format(it.createdAt):''],['휴대폰',it.device||'-'],['브라우저',it.userAgent||'-']].forEach(function(p){
+      kv.appendChild(el('span',null,p[0])); kv.appendChild(el('b',null,p[1]));
+    });
+    det.appendChild(kv);
+    det.appendChild(el('div','body',it.body||''));
+    var a=el('div','actions');
+    var reply=el('a','btn primary','✉ 답장 메일 쓰기');
+    reply.href='mailto:'+String(it.email||'').replace(/[^A-Za-z0-9.!#$%&'*+\/=^_`{|}~@-]/g,'').replace(/[?&#]/g,'')+'?subject='+encodeURIComponent('Re: [말비서] '+(it.title||''))+
+      '&body='+encodeURIComponent('안녕하세요, 말비서입니다.\n\n\n\n---\n보내주신 문의 ('+(it.createdAt?fmt.format(it.createdAt):'')+')\n'+(it.body||''));
+    var tg=el('button','btn',it.status==='done'?'↩ 처리 전으로 되돌리기':'✓ 처리 완료로 표시'); tg.type='button';
+    tg.onclick=function(){ setStatus(it,it.status==='done'?'new':'done',tg); };
+    var del=el('button','btn danger','🗑 삭제'); del.type='button';
+    del.onclick=function(){ if(confirm('이 문의를 삭제할까요? 되돌릴 수 없어요.')) remove(it,del); };
+    a.appendChild(reply); a.appendChild(tg); a.appendChild(del); det.appendChild(a);
+  }
+
+  async function setStatus(it,st,btn){
+    btn.disabled=true;
+    try{
+      await call('inquiries/'+it.id+'?updateMask.fieldPaths=status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{status:{stringValue:st}}})});
+      it.status=st; render();
+    }catch(e){ handle(e,'상태를 바꾸지 못했어요.'); btn.disabled=false; }
+  }
+  async function remove(it,btn){
+    btn.disabled=true;
+    try{ await call('inquiries/'+it.id,{method:'DELETE'}); items=items.filter(function(x){return x.id!==it.id;}); selected=null; render(); }
+    catch(e){ handle(e,'삭제하지 못했어요.'); btn.disabled=false; }
+  }
+  function handle(e,msg){
+    if(e.message==='auth'){ clearS(); showLogin('로그인이 만료됐어요. 다시 로그인해 주세요.'); }
+    else if(e.message==='forbidden'){ clearS(); showLogin('관리자 권한이 없는 계정이에요.'); }
+    else alert(msg);
+  }
+
+  async function loadAll(){
+    $('status').classList.remove('hidden'); $('status').textContent='불러오는 중…'; $('panel').classList.add('hidden');
+    try{ items=await listInquiries(); $('status').classList.add('hidden'); $('panel').classList.remove('hidden'); render(); }
+    catch(e){ if(e.message==='auth'||e.message==='forbidden') return handle(e); $('status').textContent='문의를 불러오지 못했어요. 새로고침을 눌러 다시 시도해 주세요.'; }
+  }
+
+  function showLogin(msg){ $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); $('loginErr').textContent=msg||''; }
+  function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); $('who').textContent=session.loginId; loadAll(); }
+
+  $('loginForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var id=$('lid').value.trim().toLowerCase(),pw=$('lpw').value;
+    if(!/^[a-z0-9_]{4,20}$/.test(id)||!pw){ $('loginErr').textContent='아이디와 비밀번호를 확인해 주세요.'; return; }
+    var b=$('loginBtn'); b.disabled=true; b.textContent='확인 중…'; $('loginErr').textContent='';
+    try{
+      await signIn(id,pw);
+      if(!(await isAdmin())){ clearS(); $('loginErr').textContent='관리자 권한이 없는 계정이에요.'; return; }
+      save(); $('lpw').value=''; showApp();
+    }catch(err){ clearS(); $('loginErr').textContent=err.message==='fail'?'확인하지 못했어요. 다시 시도해 주세요.':err.message; }
+    finally{ b.disabled=false; b.textContent='로그인'; }
+  });
+  $('logout').onclick=function(){ clearS(); items=[]; selected=null; showLogin(); };
+  $('reload').onclick=loadAll;
+  document.querySelectorAll('#statusF .chip').forEach(function(c){ c.onclick=function(){ fs=c.dataset.s; selected=null; render(); }; });
+  document.querySelectorAll('#typeF .chip').forEach(function(c){ c.onclick=function(){ ft=c.dataset.t; selected=null; render(); }; });
+
+  session=load();
+  if(session&&session.uid) showApp(); else showLogin();
+})();
+</script>
+</body></html>
