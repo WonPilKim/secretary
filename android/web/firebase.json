@@ -1,15 +1,43 @@
 {
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*"],
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
     "cleanUrls": true,
     "trailingSlash": false,
     "redirects": [
-      { "source": "/privacy.html", "destination": "/privacy", "type": 301 },
-      { "source": "/delete-account.html", "destination": "/delete-account", "type": 301 }
+      {
+        "source": "/privacy.html",
+        "destination": "/privacy",
+        "type": 301
+      },
+      {
+        "source": "/delete-account.html",
+        "destination": "/delete-account",
+        "type": 301
+      }
     ],
     "headers": [
-      { "source": "/img/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] }
+      {
+        "source": "/img/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/video/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      }
     ]
   }
 }
