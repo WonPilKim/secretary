@@ -24,6 +24,11 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+    /** 이 기기에 저장된 설정 모두 지우기 (회원 탈퇴 시) */
+    suspend fun clear() {
+        context.dataStore.edit { it.clear() }
+    }
+
     companion object {
         const val DEFAULT_MODEL = "claude-sonnet-5-5"
     }

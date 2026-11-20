@@ -2,9 +2,11 @@ package com.malbiseo.data
 
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
@@ -121,12 +123,42 @@ class AuthRepository {
 
     fun logout() = auth.signOut()
 
+    /**
+     * 회원 탈퇴: 비밀번호로 본인 확인 → 메모·회의록·일정과 프로필을 Firestore 에서 모두 삭제 → 로그인 계정 삭제.
+     * 데이터를 먼저 지우고 계정을 마지막에 지운다 (계정이 먼저 없어지면 보안 규칙상 데이터를 지울 수 없음).
+     */
+    suspend fun deleteAccount(password: String) {
+        val u = auth.currentUser ?: throw AuthException("로그인이 필요해요.")
+        if (password.isEmpty()) throw AuthException("비밀번호를 입력해 주세요.")
+        try {
+            val email = u.email ?: throw AuthException("계정 정보를 찾을 수 없어요.")
+            u.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
+
+            val userDoc = db.collection("users").document(u.uid)
+            for (name in USER_COLLECTIONS) {
+                val col = userDoc.collection(name)
+                while (true) {
+                    val snap = col.limit(400).get().await()
+                    if (snap.isEmpty) break
+                    val batch = db.batch()
+                    snap.documents.forEach { batch.delete(it.reference) }
+                    batch.commit().await()
+                }
+            }
+            userDoc.delete().await()
+            u.delete().await()
+        } catch (e: Exception) {
+            throw friendly(e)
+        }
+    }
+
     private fun friendly(e: Exception): AuthException = when (e) {
         is AuthException -> e
         is FirebaseAuthUserCollisionException -> AuthException("이미 사용 중인 아이디예요.")
         is FirebaseAuthWeakPasswordException -> AuthException("비밀번호는 6자 이상으로 입력해 주세요.")
         is FirebaseAuthInvalidUserException,
         is FirebaseAuthInvalidCredentialsException -> AuthException("아이디 또는 비밀번호가 맞지 않아요.")
+        is FirebaseAuthRecentLoginRequiredException -> AuthException("보안을 위해 다시 로그인한 뒤 시도해 주세요.")
         is FirebaseNetworkException -> AuthException("인터넷 연결을 확인해 주세요.")
         is FirebaseTooManyRequestsException -> AuthException("시도가 너무 많아요. 잠시 후 다시 시도해 주세요.")
         else -> AuthException("문제가 생겼어요. (${e.message ?: e.javaClass.simpleName})")
@@ -139,5 +171,6 @@ class AuthRepository {
     companion object {
         private const val DOMAIN = "malbiseo.app"
         private val ID_RULE = Regex("^[a-z0-9_]{4,20}$")
+        private val USER_COLLECTIONS = listOf("memos", "meetings", "schedules")
     }
 }

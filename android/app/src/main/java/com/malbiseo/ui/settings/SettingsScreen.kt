@@ -1,5 +1,10 @@
 package com.malbiseo.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CircularProgressIndicator
+
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
@@ -54,6 +59,7 @@ import com.malbiseo.app
 import com.malbiseo.data.SettingsStore
 import com.malbiseo.ui.common.ScreenHeader
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 
 @Composable
@@ -66,6 +72,9 @@ fun SettingsScreen() {
     var model by remember { mutableStateOf(SettingsStore.DEFAULT_MODEL) }
     var showKey by remember { mutableStateOf(false) }
     var askLogout by remember { mutableStateOf(false) }
+    var askDelete by remember { mutableStateOf(false) }
+    var deletePassword by remember { mutableStateOf("") }
+    var deleting by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf(false) }
     var nameDraft by remember { mutableStateOf("") }
     val user = LocalUser.current
@@ -165,6 +174,19 @@ fun SettingsScreen() {
                 else
                     "사용 불가 — Google 앱 또는 음성 인식 서비스를 설치/업데이트해 주세요.",
             )
+
+            HorizontalDivider()
+
+            Text("정보", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+                }) { Text("개인정보처리방침") }
+                TextButton(onClick = { deletePassword = ""; askDelete = true }) {
+                    Text("회원 탈퇴", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 
@@ -186,6 +208,61 @@ fun SettingsScreen() {
                 }
             },
             onDismiss = { askLogout = false },
+        )
+    }
+
+    if (askDelete) {
+        AlertDialog(
+            onDismissRequest = { if (!deleting) askDelete = false },
+            title = { Text("회원 탈퇴") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "계정과 함께 메모·회의록·일정이 모두 영구 삭제되고 되돌릴 수 없어요.\n" +
+                            "계속하려면 비밀번호를 입력해 주세요."
+                    )
+                    OutlinedTextField(
+                        value = deletePassword,
+                        onValueChange = { deletePassword = it },
+                        label = { Text("비밀번호") },
+                        singleLine = true,
+                        enabled = !deleting,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !deleting && deletePassword.isNotEmpty(),
+                    onClick = {
+                        deleting = true
+                        // 탈퇴 직후 로그인 화면으로 바뀌어도 뒷정리가 끊기지 않게 NonCancellable
+                        scope.launch(NonCancellable) {
+                            try {
+                                // 계정이 지워지기 전에 이 폰에 예약된 알림부터 정리
+                                val upcoming = runCatching { data.schedules.upcoming(System.currentTimeMillis()) }
+                                    .getOrDefault(emptyList())
+                                context.app().auth.deleteAccount(deletePassword)
+                                upcoming.forEach { ReminderScheduler.cancel(context, it.id) }
+                                context.app().chatLog.clear()
+                                settings.clear()
+                                askDelete = false
+                                Toast.makeText(context, "탈퇴가 완료됐어요. 이용해 주셔서 감사합니다.", Toast.LENGTH_LONG).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, e.message ?: "탈퇴하지 못했어요.", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                deleting = false
+                            }
+                        }
+                    },
+                ) {
+                    if (deleting) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Text("영구 삭제", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !deleting, onClick = { askDelete = false }) { Text("취소") }
+            },
         )
     }
 
@@ -217,3 +294,6 @@ fun SettingsScreen() {
         )
     }
 }
+
+/** Firebase Hosting 에 올린 개인정보처리방침 주소 (android/web/privacy.html) */
+const val PRIVACY_POLICY_URL = "https://malbiseo-6edb9.web.app/privacy.html"
