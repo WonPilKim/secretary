@@ -16,7 +16,8 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | 카테고리 | 생산성 |
 | 태그 (선택) | 메모, 생산성, 일정 |
 | 이메일 | {{문의 이메일}} |
-| 개인정보처리방침 URL | https://malbiseo-6edb9.web.app/privacy.html |
+| 웹사이트 | https://malbiseo.kr |
+| 개인정보처리방침 URL | https://malbiseo.kr/privacy |
 
 ## 2. 간단한 설명 (80자)
 
@@ -83,7 +84,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 ## 5. 앱 콘텐츠 (Play Console → 정책 → 앱 콘텐츠)
 
 ### 개인정보처리방침
-`https://malbiseo-6edb9.web.app/privacy.html`
+`https://malbiseo.kr/privacy`
 
 ### 광고
 **아니요, 앱에 광고가 없습니다**
@@ -108,7 +109,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | 사용자 데이터를 수집하거나 공유하나요? | 예 |
 | 전송 중 데이터가 암호화되나요? | 예 |
 | 사용자가 데이터 삭제를 요청할 수 있나요? | 예 |
-| 계정 삭제 URL | https://malbiseo-6edb9.web.app/delete-account.html |
+| 계정 삭제 URL | https://malbiseo.kr/delete-account |
 
 수집하는 데이터 유형:
 
@@ -125,7 +126,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 
 ### 계정 삭제
 - 앱에서 계정을 만들 수 있나요? **예**
-- 계정 삭제 URL: `https://malbiseo-6edb9.web.app/delete-account.html`
+- 계정 삭제 URL: `https://malbiseo.kr/delete-account`
 
 ### 권한 관련
 - `RECORD_AUDIO`: 음성 메모·회의 받아쓰기
@@ -135,12 +136,22 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 
 ---
 
-## 6. 개인정보처리방침·계정 삭제 페이지 올리기 (Firebase Hosting, 무료)
+## 6. 홈페이지·정책 페이지 올리기 (Firebase Hosting + malbiseo.kr)
 
-페이지 파일: `android/web/public/` (`privacy.html`, `delete-account.html`)
+페이지 파일은 `android/web/public/` 폴더에 있습니다.
 
-1. 두 HTML 파일에서 `{{운영자 이름}}`, `{{문의 이메일}}`을 실제 정보로 바꿉니다.
-2. Node.js(nodejs.org)를 설치하고, PowerShell에서 Firebase 도구를 설치합니다.
+| 주소 | 파일 |
+|---|---|
+| https://malbiseo.kr | `index.html` (앱 소개 홈페이지) |
+| https://malbiseo.kr/privacy | `privacy.html` |
+| https://malbiseo.kr/delete-account | `delete-account.html` |
+
+### 6-1. 내용 채우기
+`index.html`, `privacy.html`, `delete-account.html`에서 `{{운영자 이름}}`, `{{문의 이메일}}`을 실제 정보로 바꿉니다.
+
+### 6-2. 올리기 (처음 한 번 설치)
+1. Node.js(nodejs.org, LTS 버전)를 설치합니다.
+2. PowerShell에서 Firebase 도구를 설치합니다.
    ```
    npm install -g firebase-tools
    ```
@@ -148,11 +159,19 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
    ```
    firebase login
    ```
-4. 페이지를 올립니다.
+4. 페이지를 올립니다. 내용을 고칠 때마다 이 두 줄만 다시 실행하면 됩니다.
    ```
    cd C:\workspace\secretary\android\web
    firebase deploy --only hosting
    ```
-5. 브라우저에서 아래 주소가 열리는지 확인합니다.
-   - https://malbiseo-6edb9.web.app/privacy.html
-   - https://malbiseo-6edb9.web.app/delete-account.html
+5. 우선 https://malbiseo-6edb9.web.app 에서 열리는지 확인합니다.
+
+### 6-3. malbiseo.kr 도메인 연결 (처음 한 번)
+1. Firebase 콘솔 → 프로젝트 `malbiseo-6edb9` → **빌드 → Hosting** → **커스텀 도메인 추가**
+2. `malbiseo.kr` 입력 → 다음
+3. Firebase가 보여주는 **DNS 레코드**(TXT 1개, A 레코드 1~2개)를 도메인을 산 곳(가비아, 후이즈, 카페24 등)의 **DNS 관리** 화면에 그대로 추가합니다.
+   - 호스트(이름) 칸: `@` 또는 비워 두기
+   - 같은 이름의 기존 A 레코드(도메인 업체의 기본 주차 페이지 등)가 있으면 지웁니다.
+4. Firebase 화면에서 **확인**을 누릅니다. 연결과 보안 인증서(https) 발급에 수 분에서 최대 24시간 걸립니다.
+5. 같은 방법으로 `www.malbiseo.kr`도 추가하고, "malbiseo.kr로 리디렉션"을 선택합니다.
+6. https://malbiseo.kr/privacy 가 열리면 완료입니다. Play Console에 이 주소를 넣으세요.

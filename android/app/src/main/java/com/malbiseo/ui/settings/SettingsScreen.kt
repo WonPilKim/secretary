@@ -295,5 +295,5 @@ fun SettingsScreen() {
     }
 }
 
-/** Firebase Hosting 에 올린 개인정보처리방침 주소 (android/web/privacy.html) */
-const val PRIVACY_POLICY_URL = "https://malbiseo-6edb9.web.app/privacy.html"
+/** 개인정보처리방침 주소 (android/web/public/privacy.html 을 Firebase Hosting + malbiseo.kr 로 배포) */
+const val PRIVACY_POLICY_URL = "https://malbiseo.kr/privacy"
