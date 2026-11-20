@@ -54,6 +54,8 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0}
 .sitenav .links a,.sitenav .links button{text-decoration:none;color:var(--fg);font:inherit;font-size:15px;font-weight:700;background:none;border:0;padding:0;cursor:pointer}
 .sitenav .links a[aria-current=page]{color:var(--accent)}
 .sitenav .links .pill-btn{color:var(--bg);background:var(--accent);padding:8px 16px;border-radius:999px}
+.sitenav .links .user,.sitenav .links .user-chip{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:8px 14px;border-radius:999px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:15px}
+@media (max-width:480px){.sitenav .links a[aria-current=page]{display:none}.sitenav .links .user,.sitenav .links .user-chip{max-width:96px;padding:6px 11px;font-size:13px}}
 .sitefoot{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:14px}
 .sitefoot .in{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .sitefoot a{margin-right:18px;color:inherit}

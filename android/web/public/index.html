@@ -32,6 +32,7 @@ nav .links a{text-decoration:none;color:var(--muted);font-size:15px}
 nav .links .sec{display:flex;gap:20px;padding-right:20px;border-right:1px solid var(--line)}
 nav .links .top{color:var(--fg);font-weight:700}
 nav .links .login{color:var(--bg);background:var(--accent);padding:8px 16px;border-radius:999px;font-weight:700}
+nav .links .login.user{color:var(--accent);background:var(--soft);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hero{background:linear-gradient(135deg,#6D64F5,#4F46E5 55%,#3730A3);color:#fff;overflow:hidden;position:relative}
 .hero::before{content:"";position:absolute;width:560px;height:560px;border-radius:50%;background:rgba(255,255,255,.06);right:-160px;top:-220px}
 .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding-top:72px;padding-bottom:0;position:relative}
@@ -90,7 +91,7 @@ footer .biz span{white-space:nowrap}
   <a class="brand" href="/"><img src="/icon.png" alt="">말비서</a>
   <div class="links">
     <span class="sec"><a href="#features">기능</a><a href="#video">영상</a><a href="#screens">화면</a></span>
-    <a class="top" href="/support">고객지원</a><a class="top" href="/my">내 기록 보기</a><a class="login" href="/my">로그인</a>
+    <a class="top" href="/support">고객지원</a><a class="top" href="/my">내 기록 보기</a><a class="login" data-auth="login" href="/my">로그인</a>
   </div>
 </div></nav>
 
@@ -173,5 +174,6 @@ footer .biz span{white-space:nowrap}
   <div><a href="/my">내 기록 보기</a><a href="/privacy">개인정보처리방침</a><a href="/support">고객지원</a><a href="/terms">이용약관</a><a href="/delete-account">계정 삭제</a><a href="mailto:cosimprogram@gmail.com">문의</a></div>
   <div class="biz"><span>상호: 원앤컴퍼니</span> | <span>대표: 김원필</span> | <span>사업자등록번호: 655-23-02108</span><br><span>주소: 서울시 용산구</span> | <span>이메일: <a href="mailto:cosimprogram@gmail.com">cosimprogram@gmail.com</a></span><br>© 2026 말비서 · 원앤컴퍼니</div>
 </div></footer>
+<script src="/site.js"></script>
 </body>
 </html>
