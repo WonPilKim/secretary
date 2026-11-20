@@ -1,7 +1,7 @@
 # 말비서: Google Play 스토어 등록정보
 
 Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 붙여넣을 내용입니다.
-`{{운영자 이름}}`, `{{문의 이메일}}`은 실제 정보로 바꿔 주세요.
+운영자: 김원필 · 문의: kwpteam@gmail.com
 
 ---
 
@@ -15,7 +15,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | 무료/유료 | 무료 |
 | 카테고리 | 생산성 |
 | 태그 (선택) | 메모, 생산성, 일정 |
-| 이메일 | {{문의 이메일}} |
+| 이메일 | kwpteam@gmail.com |
 | 웹사이트 | https://malbiseo.kr |
 | 개인정보처리방침 URL | https://malbiseo.kr/privacy |
 
@@ -66,7 +66,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 • 정확한 받아쓰기를 위해 조용한 환경을 권장합니다
 • 회원 탈퇴는 설정 > 회원 탈퇴에서 언제든 할 수 있으며, 모든 데이터가 즉시 삭제됩니다
 
-문의: {{문의 이메일}}
+문의: kwpteam@gmail.com
 ```
 
 ## 4. 그래픽 (이 폴더의 파일)
@@ -146,10 +146,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | https://malbiseo.kr/privacy | `privacy.html` |
 | https://malbiseo.kr/delete-account | `delete-account.html` |
 
-### 6-1. 내용 채우기
-`index.html`, `privacy.html`, `delete-account.html`에서 `{{운영자 이름}}`, `{{문의 이메일}}`을 실제 정보로 바꿉니다.
-
-### 6-2. 올리기 (처음 한 번 설치)
+### 6-1. 올리기 (처음 한 번 설치)
 1. Node.js(nodejs.org, LTS 버전)를 설치합니다.
 2. PowerShell에서 Firebase 도구를 설치합니다.
    ```
@@ -166,7 +163,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
    ```
 5. 우선 https://malbiseo-6edb9.web.app 에서 열리는지 확인합니다.
 
-### 6-3. malbiseo.kr 도메인 연결 (처음 한 번)
+### 6-2. malbiseo.kr 도메인 연결 (처음 한 번)
 1. Firebase 콘솔 → 프로젝트 `malbiseo-6edb9` → **빌드 → Hosting** → **커스텀 도메인 추가**
 2. `malbiseo.kr` 입력 → 다음
 3. Firebase가 보여주는 **DNS 레코드**(TXT 1개, A 레코드 1~2개)를 도메인을 산 곳(가비아, 후이즈, 카페24 등)의 **DNS 관리** 화면에 그대로 추가합니다.
