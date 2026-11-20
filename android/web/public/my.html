@@ -2,7 +2,7 @@
 <title>내 기록 - 말비서</title><meta name="robots" content="noindex">
 <link rel="stylesheet" href="/style.css"><link rel="icon" href="/icon.png">
 <style>
-main.wide{max-width:1100px}
+main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
 .login{max-width:400px;margin:40px auto 0}
 .login .box{padding:24px}
 .login h1{font-size:24px}
@@ -48,8 +48,15 @@ main.wide{max-width:1100px}
 @media (max-width:760px){.split{grid-template-columns:1fr}.list{max-height:none}.ev{flex-direction:column;gap:4px}.ev .when{width:auto}}
 @media print{body{background:#fff;color:#000}.topbar,.tabs,.search,.list,.actions,.note-ro,.back{display:none!important}.split{display:block}.detail{border:0;padding:0}}
 </style></head>
-<body><main class="wide">
-<p class="back" style="margin:0 0 16px"><a href="/">← 말비서 홈</a></p>
+<body>
+<nav class="sitenav"><div class="in">
+  <a class="brand" href="/"><img src="/icon.png" alt="">말비서</a>
+  <div class="links">
+    <a href="/support">고객지원</a><a href="/my" aria-current="page">내 기록 보기</a>
+    <a class="pill-btn" id="navLogin" href="#loginForm">로그인</a><button class="pill-btn hidden" id="logout" type="button">로그아웃</button>
+  </div>
+</div></nav>
+<main class="wide">
 
 <!-- 로그인 -->
 <section id="loginView" class="login hidden" style="padding:0">
@@ -69,7 +76,7 @@ main.wide{max-width:1100px}
 <section id="appView" class="hidden" style="padding:0">
   <div class="topbar">
     <h1 id="hello">내 기록</h1>
-    <div style="display:flex;gap:8px"><button class="btn" id="reload" type="button">↻ 새로고침</button><button class="btn" id="logout" type="button">로그아웃</button></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="reload" type="button">↻ 새로고침</button></div>
   </div>
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="meetings" aria-selected="true">회의록 <span id="cMeetings"></span></button>
@@ -88,6 +95,10 @@ main.wide{max-width:1100px}
   <p class="note-ro">웹에서는 기록을 보고 복사·저장만 할 수 있어요. 수정과 삭제는 앱에서 해 주세요.</p>
 </section>
 </main>
+<footer class="sitefoot"><div class="in">
+  <div><a href="/my">내 기록 보기</a><a href="/privacy">개인정보처리방침</a><a href="/support">고객지원</a><a href="/terms">이용약관</a><a href="/delete-account">계정 삭제</a><a href="mailto:kwpteam@gmail.com">문의</a></div>
+  <div>© 2026 말비서 · 김원필</div>
+</div></footer>
 
 <script>
 (function(){
@@ -285,8 +296,11 @@ main.wide{max-width:1100px}
     }
   }
 
-  function showLogin(msg){ $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); $('loginErr').textContent=msg||''; $('lid').focus(); }
-  function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); loadAll(); }
+  // 상단 메뉴: 로그인 전에는 "로그인", 로그인 후에는 "로그아웃"
+  function navAuth(loggedIn){ $('navLogin').classList.toggle('hidden',loggedIn); $('logout').classList.toggle('hidden',!loggedIn); }
+  function showLogin(msg){ navAuth(false); $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); $('loginErr').textContent=msg||''; $('lid').focus(); }
+  function showApp(){ navAuth(true); $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); loadAll(); }
+  $('navLogin').onclick=function(e){ e.preventDefault(); $('lid').focus(); };
 
   $('loginForm').addEventListener('submit',async function(e){
     e.preventDefault();

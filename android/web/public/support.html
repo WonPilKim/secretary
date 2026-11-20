@@ -1,8 +1,14 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>말비서 고객지원</title><meta name="description" content="말비서 자주 묻는 질문과 문의·오류 신고">
 <link rel="stylesheet" href="/style.css"><link rel="icon" href="/icon.png"></head>
-<body><main>
-<p style="margin:0 0 16px"><a href="/">← 말비서 홈</a></p>
+<body>
+<nav class="sitenav"><div class="in">
+  <a class="brand" href="/"><img src="/icon.png" alt="">말비서</a>
+  <div class="links">
+    <a href="/support" aria-current="page">고객지원</a><a href="/my">내 기록 보기</a><a class="pill-btn" href="/my">로그인</a>
+  </div>
+</div></nav>
+<main>
 <header><img src="/icon.png" alt=""><h1>고객지원</h1></header>
 <p class="meta">자주 묻는 질문을 먼저 확인하시고, 해결되지 않으면 아래 양식으로 알려 주세요.</p>
 
@@ -86,6 +92,11 @@
 </form>
 <p class="meta" style="margin-top:20px">양식이 동작하지 않으면 <a href="/privacy#contact">개인정보처리방침의 문의처</a>로 이메일을 보내 주세요.</p>
 </main>
+<footer class="sitefoot"><div class="in">
+  <div><a href="/my">내 기록 보기</a><a href="/privacy">개인정보처리방침</a><a href="/support">고객지원</a><a href="/terms">이용약관</a><a href="/delete-account">계정 삭제</a><a href="mailto:kwpteam@gmail.com">문의</a></div>
+  <div>© 2026 말비서 · 김원필</div>
+</div></footer>
+
 <script>
 (function(){
   var ENDPOINT='https://firestore.googleapis.com/v1/projects/malbiseo-6edb9/databases/(default)/documents/inquiries';
