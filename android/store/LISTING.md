@@ -147,6 +147,7 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 | https://malbiseo.kr/privacy | `privacy.html` |
 | https://malbiseo.kr/delete-account | `delete-account.html` |
 | https://malbiseo.kr/terms | `terms.html` |
+| https://malbiseo.kr/support | `support.html` (자주 묻는 질문 + 문의·오류 신고 양식) |
 
 ### 6-1. 올리기 (처음 한 번 설치)
 1. Node.js(nodejs.org, LTS 버전)를 설치합니다.
@@ -174,3 +175,17 @@ Play Console → **스토어 등록정보** 및 **앱 콘텐츠**에 그대로 �
 4. Firebase 화면에서 **확인**을 누릅니다. 연결과 보안 인증서(https) 발급에 수 분에서 최대 24시간 걸립니다.
 5. 같은 방법으로 `www.malbiseo.kr`도 추가하고, "malbiseo.kr로 리디렉션"을 선택합니다.
 6. https://malbiseo.kr/privacy 가 열리면 완료입니다. Play Console에 이 주소를 넣으세요.
+
+## 7. 고객지원 문의 받기 (malbiseo.kr/support)
+
+- 문의 양식 내용은 Firestore의 `inquiries` 컬렉션에 저장됩니다.
+- 보안 규칙(`android/firestore.rules`)으로 **보내기만 가능**하고, 읽기·수정·삭제는 막혀 있습니다.
+- 보안 규칙을 바꿨을 때는 홈페이지와 함께 올립니다.
+  ```
+  firebase deploy --only hosting,firestore:rules
+  ```
+- 확인: Firebase 콘솔 → Firestore Database → 데이터 → `inquiries`
+  - `type`: question(질문) / bug(오류 신고) / feature(기능 제안) / account(계정·데이터)
+  - 답변은 `email`로 직접 보내고, 처리 후 `status`를 `done`으로 바꿔 두면 관리하기 편합니다.
+  - 처리 완료 후 1년 이내에 삭제합니다 (개인정보처리방침에 약속한 내용).
+- 새 문의 알림은 따로 오지 않으니 주기적으로 확인하세요.

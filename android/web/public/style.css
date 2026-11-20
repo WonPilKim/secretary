@@ -15,3 +15,30 @@ th{background:var(--card)}
 a{color:var(--accent)}
 ol,ul{padding-left:22px}
 .warn{color:#dc2626;font-weight:600}
+
+/* 고객지원 */
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:10px 0;padding:0 16px}
+details summary{cursor:pointer;padding:14px 0;font-weight:600;list-style:none;position:relative;padding-right:24px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";position:absolute;right:0;top:12px;font-size:20px;color:var(--muted)}
+details[open] summary::after{content:"−"}
+details > div{padding:0 0 14px;color:var(--muted)}
+form .field{margin:14px 0}
+form label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+form .hint{font-weight:400;color:var(--muted);font-size:13px}
+input[type=text],input[type=email],textarea{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+textarea{min-height:150px;resize:vertical}
+input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0}
+.types{display:flex;flex-wrap:wrap;gap:8px}
+.types label{font-weight:500;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;cursor:pointer;margin:0}
+.types input{position:absolute;opacity:0;pointer-events:none}
+.types label:has(input:checked){border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--muted)}
+.agree input{margin-top:5px}
+.submit{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:13px 22px;font:inherit;font-weight:700;cursor:pointer;width:100%}
+@media (prefers-color-scheme:dark){.submit{color:#14151c}}
+.submit:disabled{opacity:.6;cursor:wait}
+.msg{border-radius:12px;padding:14px 16px;margin-top:14px;display:none}
+.msg.ok{display:block;background:color-mix(in srgb,#16a34a 12%,var(--card));border:1px solid #16a34a55}
+.msg.err{display:block;background:color-mix(in srgb,#dc2626 12%,var(--card));border:1px solid #dc262655}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}

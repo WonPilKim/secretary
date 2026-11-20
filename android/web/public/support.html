@@ -1,0 +1,120 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>말비서 고객지원</title><meta name="description" content="말비서 자주 묻는 질문과 문의·오류 신고">
+<link rel="stylesheet" href="/style.css"><link rel="icon" href="/icon.png"></head>
+<body><main>
+<p style="margin:0 0 16px"><a href="/">← 말비서 홈</a></p>
+<header><img src="/icon.png" alt=""><h1>고객지원</h1></header>
+<p class="meta">자주 묻는 질문을 먼저 확인하시고, 해결되지 않으면 아래 양식으로 알려 주세요.</p>
+
+<h2 id="faq">자주 묻는 질문</h2>
+
+<details><summary>음성 인식이 안 돼요 / 글자가 안 적혀요</summary><div>
+<ol>
+<li>휴대폰 <b>설정 → 애플리케이션 → 말비서 → 권한</b>에서 <b>마이크</b>를 허용해 주세요.</li>
+<li>음성 인식은 휴대폰의 Google 음성 인식을 사용해요. Play 스토어에서 <b>Google 앱</b>을 최신 버전으로 업데이트해 주세요.</li>
+<li>인터넷 연결을 확인해 주세요.</li>
+<li>회의 기록 화면의 <b>음량 막대</b>가 움직이지 않으면 마이크 소리가 들어오지 않는 것이에요. 다른 앱이 마이크를 쓰고 있지 않은지 확인해 주세요.</li>
+</ol></div></details>
+
+<details><summary>회의 기록 중에 받아쓰기가 멈췄어요</summary><div>
+기록 중에는 화면이 꺼지지 않도록 유지돼요. 다른 앱으로 전환하거나 화면을 직접 끄면 받아쓰기가 멈출 수 있으니, 기록하는 동안에는 말비서 화면을 켜 두세요. 멈췄다면 <b>계속</b> 버튼을 눌러 이어서 기록할 수 있어요.
+</div></details>
+
+<details><summary>녹음 파일도 저장되나요?</summary><div>
+아니요. 말비서는 음성 원본을 저장하지 않고, 텍스트로 받아쓴 내용만 저장해요.
+</div></details>
+
+<details><summary>회의록 요약은 무료인가요?</summary><div>
+네. 기본 요약은 무료이며 휴대폰 안에서 처리돼요. 설정에서 본인의 Claude API 키를 등록하면 더 자연스러운 AI 요약을 쓸 수 있고, 이때 비용은 본인의 Anthropic 계정에 청구돼요.
+</div></details>
+
+<details><summary>다른 휴대폰에서도 내 메모와 회의록을 볼 수 있나요?</summary><div>
+네. 같은 아이디로 로그인하면 메모·회의록·일정이 자동으로 동기화돼요. Claude API 키는 보안을 위해 휴대폰마다 따로 입력해야 해요.
+</div></details>
+
+<details><summary>일정 알림이 오지 않아요</summary><div>
+<ol>
+<li>휴대폰 <b>설정 → 애플리케이션 → 말비서 → 알림</b>을 허용해 주세요.</li>
+<li>배터리 절약(최적화) 설정에서 말비서를 <b>제한 없음</b>으로 바꿔 주세요.</li>
+<li>일정을 다른 휴대폰에서 만들었다면, 알림은 일정을 만든 휴대폰에서 울려요.</li>
+</ol></div></details>
+
+<details><summary>비밀번호를 잊어버렸어요</summary><div>
+현재 앱에서는 비밀번호 찾기를 지원하지 않아요. 아래 양식에서 <b>계정·데이터</b>를 선택하고 아이디를 적어 보내 주시면 확인 후 안내해 드릴게요.
+</div></details>
+
+<details><summary>회원 탈퇴는 어떻게 하나요?</summary><div>
+앱의 <b>설정 → 회원 탈퇴</b>에서 바로 할 수 있고, 모든 데이터가 즉시 삭제돼요. 자세한 내용은 <a href="/delete-account">계정 및 데이터 삭제 안내</a>를 참고하세요.
+</div></details>
+
+<h2 id="contact">문의 · 오류 신고</h2>
+<p class="meta" style="margin-bottom:8px">보내 주신 내용은 운영자만 볼 수 있어요. 답변은 남겨 주신 이메일로 보내 드려요.</p>
+
+<form id="f" novalidate>
+  <div class="field">
+    <label>유형</label>
+    <div class="types">
+      <label><input type="radio" name="type" value="question" checked>질문</label>
+      <label><input type="radio" name="type" value="bug">오류 신고</label>
+      <label><input type="radio" name="type" value="feature">기능 제안</label>
+      <label><input type="radio" name="type" value="account">계정·데이터</label>
+    </div>
+  </div>
+  <div class="field">
+    <label for="email">답변 받을 이메일</label>
+    <input type="email" id="email" name="email" maxlength="200" required autocomplete="email" placeholder="you@example.com">
+  </div>
+  <div class="field">
+    <label for="title">제목</label>
+    <input type="text" id="title" name="title" maxlength="100" required placeholder="예: 회의 기록 중 글자가 안 나와요">
+  </div>
+  <div class="field">
+    <label for="body">내용</label>
+    <textarea id="body" name="body" maxlength="3000" required placeholder="오류라면 언제, 어떤 화면에서, 무엇을 눌렀을 때 생겼는지 적어 주시면 빨리 해결할 수 있어요."></textarea>
+  </div>
+  <div class="field">
+    <label for="device">휴대폰 기종 <span class="hint">(선택, 오류 신고 시 도움이 돼요)</span></label>
+    <input type="text" id="device" name="device" maxlength="100" placeholder="예: 갤럭시 S24, Android 15">
+  </div>
+  <div class="hp" aria-hidden="true"><label for="website">website</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
+  <div class="field agree">
+    <input type="checkbox" id="agree" required>
+    <label for="agree" style="font-weight:400;margin:0">문의 처리를 위해 이메일과 문의 내용을 수집하는 데 동의합니다. 처리 완료 후 1년 이내에 삭제됩니다. (<a href="/privacy">개인정보처리방침</a>)</label>
+  </div>
+  <button class="submit" id="send" type="submit">보내기</button>
+  <div class="msg" id="msg" role="status"></div>
+</form>
+<p class="meta" style="margin-top:20px">양식이 동작하지 않으면 <a href="/privacy#contact">개인정보처리방침의 문의처</a>로 이메일을 보내 주세요.</p>
+</main>
+<script>
+(function(){
+  var ENDPOINT='https://firestore.googleapis.com/v1/projects/malbiseo-6edb9/databases/(default)/documents/inquiries';
+  var f=document.getElementById('f'),btn=document.getElementById('send'),msg=document.getElementById('msg');
+  function show(ok,text){msg.className='msg '+(ok?'ok':'err');msg.textContent=text;}
+  var preset=new URLSearchParams(location.search).get('type');
+  if(preset){var r=f.querySelector('input[name=type][value="'+preset+'"]');if(r)r.checked=true;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    if(f.website.value){show(true,'접수되었어요. 감사합니다.');f.reset();return;}
+    var email=f.email.value.trim(),title=f.title.value.trim(),body=f.body.value.trim(),device=f.device.value.trim();
+    var type=(f.querySelector('input[name=type]:checked')||{}).value||'question';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){show(false,'답변 받을 이메일 주소를 확인해 주세요.');f.email.focus();return;}
+    if(!title){show(false,'제목을 입력해 주세요.');f.title.focus();return;}
+    if(body.length<5){show(false,'내용을 조금 더 자세히 적어 주세요.');f.body.focus();return;}
+    if(!document.getElementById('agree').checked){show(false,'개인정보 수집에 동의해 주세요.');return;}
+    btn.disabled=true;btn.textContent='보내는 중…';msg.className='msg';
+    var doc={fields:{
+      type:{stringValue:type},email:{stringValue:email},title:{stringValue:title},
+      body:{stringValue:body},device:{stringValue:device},status:{stringValue:'new'},
+      userAgent:{stringValue:navigator.userAgent.slice(0,300)},
+      createdAt:{timestampValue:new Date().toISOString()}
+    }};
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)})
+      .then(function(r){if(!r.ok)throw new Error(r.status);
+        show(true,'접수되었어요. 확인 후 '+email+'(으)로 답변 드릴게요. 감사합니다!');f.reset();})
+      .catch(function(){show(false,'보내지 못했어요. 잠시 후 다시 시도하시거나 아래 안내된 이메일로 보내 주세요.');})
+      .finally(function(){btn.disabled=false;btn.textContent='보내기';});
+  });
+})();
+</script>
+</body></html>

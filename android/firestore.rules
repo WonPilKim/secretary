@@ -5,5 +5,30 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // 홈페이지(malbiseo.kr/support) 문의·오류 신고.
+    // 누구나 정해진 형식으로 "보내기"만 가능하고, 읽기·수정·삭제는 막는다 (운영자는 Firebase 콘솔에서 확인).
+    match /inquiries/{id} {
+      allow create: if request.resource.data.keys().hasOnly(
+                         ['type', 'email', 'title', 'body', 'device', 'status', 'userAgent', 'createdAt'])
+                    && request.resource.data.keys().hasAll(['type', 'email', 'title', 'body', 'status', 'createdAt'])
+                    && request.resource.data.type in ['question', 'bug', 'feature', 'account']
+                    && request.resource.data.status == 'new'
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() <= 200
+                    && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() > 0
+                    && request.resource.data.title.size() <= 100
+                    && request.resource.data.body is string
+                    && request.resource.data.body.size() >= 5
+                    && request.resource.data.body.size() <= 3000
+                    && (!('device' in request.resource.data) || (request.resource.data.device is string && request.resource.data.device.size() <= 100))
+                    && (!('userAgent' in request.resource.data) || (request.resource.data.userAgent is string && request.resource.data.userAgent.size() <= 300))
+                    && request.resource.data.createdAt is timestamp
+                    && request.resource.data.createdAt > request.time - duration.value(1, 'h')
+                    && request.resource.data.createdAt < request.time + duration.value(1, 'h');
+      allow read, update, delete: if false;
+    }
   }
 }
