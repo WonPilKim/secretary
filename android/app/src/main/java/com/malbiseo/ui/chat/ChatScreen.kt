@@ -121,9 +121,13 @@ fun ChatScreen(onNavigate: (String) -> Unit) {
     // 읽어주는 소리를 마이크가 받아 적지 않도록 듣기 전에 멈춘다
     val startMic = rememberWithMicPermission { app.speaker.stop(); speech.start() }
 
-    LaunchedEffect(Unit) {
-        if (messages.isEmpty()) {
-            messages.add(ChatMessage("무엇을 도와드릴까요? 마이크를 누르고 편하게 말씀해 주세요.", false))
+    // 첫 인사말: "원앤님, 무엇을 도와드릴까요?"
+    // 가입 직후엔 이름이 조금 늦게 들어오므로, 이름이 바뀌면 아직 대화가 없는 인사말도 새 이름으로 바꾼다.
+    LaunchedEffect(user.name) {
+        val hello = ChatMessage(greetingFor(user.name), false)
+        when {
+            messages.isEmpty() -> messages.add(hello)
+            messages.size == 1 && !messages[0].fromUser && messages[0].text.endsWith(GREETING_TAIL) -> messages[0] = hello
         }
     }
     LaunchedEffect(messages.size) {
@@ -310,3 +314,9 @@ private fun Bubble(msg: ChatMessage, onClick: (() -> Unit)? = null) {
         }
     }
 }
+
+private const val GREETING_TAIL = "무엇을 도와드릴까요? 마이크를 누르고 편하게 말씀해 주세요."
+
+/** 이름이 있으면 "원앤님, ..." / 아직 없으면(또는 이메일이면) 이름 없이 */
+private fun greetingFor(name: String): String =
+    if (name.isBlank() || name == "회원" || '@' in name) GREETING_TAIL else "${name}님, $GREETING_TAIL"
