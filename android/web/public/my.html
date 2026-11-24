@@ -11,6 +11,8 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
 .row{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 .btn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer}
 .btn:hover{border-color:var(--accent)}
+.linkbtn{font:inherit;font-size:14px;background:none;border:0;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+.ok{color:#16a34a!important}
 .err{color:#dc2626;font-size:14px;min-height:20px;margin-top:10px}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
 .topbar h1{font-size:24px;margin:0}
@@ -91,8 +93,19 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
     <label class="row" style="margin:6px 0 16px"><input type="checkbox" id="remember"> 로그인 상태 유지 <span style="font-size:12px">(공용 PC에서는 체크하지 마세요)</span></label>
     <button class="submit" id="loginBtn" type="submit">로그인</button>
     <div class="err" id="loginErr" role="alert"></div>
+    <p style="text-align:right;margin:4px 0 0"><button type="button" class="linkbtn" id="showReset">비밀번호를 잊으셨나요?</button></p>
   </form>
-  <p class="meta" style="font-size:14px">아직 계정이 없다면 말비서 앱에서 가입해 주세요. 비밀번호를 잊으셨다면 <a href="/support?type=account">고객지원</a>으로 문의해 주세요.</p>
+
+  <form id="resetForm" class="box hidden" novalidate>
+    <h2 style="border:0;margin:0 0 6px;padding:0;font-size:19px">비밀번호 찾기</h2>
+    <p class="meta" style="margin:0 0 8px;font-size:14px">가입한 이메일을 입력하면 비밀번호를 다시 정할 수 있는 메일을 보내 드려요.</p>
+    <div class="field"><label for="remail">이메일</label><input type="email" id="remail" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="100"></div>
+    <button class="submit" id="resetBtn" type="submit">재설정 메일 보내기</button>
+    <div class="err" id="resetMsg" role="status"></div>
+    <p style="text-align:right;margin:4px 0 0"><button type="button" class="linkbtn" id="backLogin">← 로그인으로 돌아가기</button></p>
+  </form>
+
+  <p class="meta" style="font-size:14px">아직 계정이 없다면 말비서 앱에서 가입해 주세요. 예전에 아이디로 가입해 이메일이 없는 계정은 <a href="/support?type=account">고객지원</a>으로 문의해 주세요.</p>
 </section>
 
 <!-- 내 기록 -->
@@ -410,6 +423,37 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
   function showLogin(msg){ navAuth(false); $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); $('loginErr').textContent=msg||''; $('lid').focus(); }
   function showApp(){ navAuth(true); $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); loadAll(); }
   $('navLogin').onclick=function(e){ e.preventDefault(); $('lid').focus(); };
+
+  // ───── 비밀번호 찾기 (앱과 같은 방식: 가입 여부는 알려주지 않고 늘 같은 안내) ─────
+  function showResetForm(on){
+    $('loginForm').classList.toggle('hidden',on); $('resetForm').classList.toggle('hidden',!on);
+    $('resetMsg').textContent=''; $('resetMsg').classList.remove('ok');
+    if(on){ var v=$('lid').value.trim(); if(v.indexOf('@')>0) $('remail').value=v; $('remail').focus(); } else $('lid').focus();
+  }
+  $('showReset').onclick=function(){ showResetForm(true); };
+  $('backLogin').onclick=function(){ showResetForm(false); };
+  $('resetForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var em=$('remail').value.trim().toLowerCase(), msg=$('resetMsg'), btn=$('resetBtn');
+    msg.classList.remove('ok');
+    if(/@malbiseo\.app$/.test(em)||/^[a-z0-9_]{4,20}$/.test(em)){ msg.textContent='아이디로 가입한 계정은 메일을 받을 수 없어요. 앱에 로그인한 뒤 설정에서 이메일을 등록하거나 고객지원으로 문의해 주세요.'; return; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ msg.textContent='가입한 이메일 주소를 입력해 주세요.'; return; }
+    btn.disabled=true; btn.textContent='보내는 중…'; msg.textContent='';
+    try{
+      var r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+API_KEY,{
+        method:'POST',headers:{'Content-Type':'application/json','X-Firebase-Locale':'ko'},
+        body:JSON.stringify({requestType:'PASSWORD_RESET',email:em})});
+      var d=await r.json().catch(function(){return {};});
+      var code=String(d&&d.error&&d.error.message||'');
+      if(!r.ok&&!/EMAIL_NOT_FOUND/.test(code)){
+        msg.textContent=/TOO_MANY_ATTEMPTS|RESET_PASSWORD_EXCEED_LIMIT/.test(code)?'요청이 너무 많아요. 잠시 후 다시 시도해 주세요.':'메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.';
+        return;
+      }
+      msg.classList.add('ok');
+      msg.textContent=em+'(으)로 가입된 계정이 있다면 비밀번호 재설정 메일을 보냈어요. 메일함과 스팸함을 확인해 주세요.';
+    }catch(err){ msg.textContent='인터넷 연결을 확인해 주세요.'; }
+    finally{ btn.disabled=false; btn.textContent='재설정 메일 보내기'; }
+  });
 
   $('loginForm').addEventListener('submit',async function(e){
     e.preventDefault();
