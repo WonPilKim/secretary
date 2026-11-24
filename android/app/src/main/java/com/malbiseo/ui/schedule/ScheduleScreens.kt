@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.EventAvailable
@@ -169,7 +170,7 @@ fun ScheduleScreen(onOpen: (id: Long, epochDay: Long) -> Unit) {
             }
 
             Row(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 10.dp, bottom = 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -183,6 +184,12 @@ fun ScheduleScreen(onOpen: (id: Long, epochDay: Long) -> Unit) {
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    IconButton(onClick = {
+                        exportToPhoneCalendar(context, selected.toString(), dayItems)
+                    }) { Icon(Icons.Filled.EditCalendar, contentDescription = "이 날 일정 모두 휴대폰 캘린더로") }
+                    IconButton(onClick = { shareSchedules(context, selected, dayItems) }) {
+                        Icon(Icons.Filled.Share, contentDescription = "이 날 일정 모두 공유")
+                    }
                 }
             }
 
@@ -203,6 +210,8 @@ fun ScheduleScreen(onOpen: (id: Long, epochDay: Long) -> Unit) {
                         ScheduleRow(
                             s,
                             onClick = { onOpen(s.id, selectedDay) },
+                            onAddToCalendar = { addToPhoneCalendar(context, s.title, s.note, s.startAt) },
+                            onShare = { shareSchedule(context, s.title, s.note, s.startAt) },
                             onToggle = { checked ->
                                 scope.launch {
                                     val updated = s.copy(done = checked)
@@ -357,8 +366,15 @@ private fun DayCell(date: LocalDate, isSelected: Boolean, isToday: Boolean, coun
 }
 
 @Composable
-private fun ScheduleRow(s: Schedule, onClick: () -> Unit, onToggle: (Boolean) -> Unit) {
+private fun ScheduleRow(
+    s: Schedule,
+    onClick: () -> Unit,
+    onToggle: (Boolean) -> Unit,
+    onAddToCalendar: () -> Unit,
+    onShare: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
+    var menu by remember { mutableStateOf(false) }
     AppCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier.padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 6.dp).height(IntrinsicSize.Min),
@@ -401,6 +417,23 @@ private fun ScheduleRow(s: Schedule, onClick: () -> Unit, onToggle: (Boolean) ->
                 }
             }
             Checkbox(checked = s.done, onCheckedChange = onToggle)
+            Box {
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "더보기", tint = colors.onSurfaceVariant)
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text("휴대폰 캘린더에 추가") },
+                        leadingIcon = { Icon(Icons.Filled.EditCalendar, contentDescription = null) },
+                        onClick = { menu = false; onAddToCalendar() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("공유 (카카오톡 등)") },
+                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                        onClick = { menu = false; onShare() },
+                    )
+                }
+            }
         }
     }
 }
