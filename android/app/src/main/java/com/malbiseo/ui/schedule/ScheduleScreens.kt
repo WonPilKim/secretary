@@ -453,6 +453,16 @@ fun ScheduleEditScreen(id: Long, initialEpochDay: Long, onDone: () -> Unit) {
 
     Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(if (isNew) "일정 추가" else "일정 수정", onBack = onDone) {
+            // 스크롤하지 않아도 보이게 위쪽에도 캘린더·공유 버튼
+            val headerStart = LocalDateTime.of(date, time).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            IconButton(onClick = {
+                if (title.isBlank()) error = "제목을 입력해 주세요."
+                else addToPhoneCalendar(context, title.trim(), note.trim(), headerStart)
+            }) { Icon(Icons.Filled.EditCalendar, contentDescription = "휴대폰 캘린더에 추가") }
+            IconButton(onClick = {
+                if (title.isBlank()) error = "제목을 입력해 주세요."
+                else shareSchedule(context, title.trim(), note.trim(), headerStart)
+            }) { Icon(Icons.Filled.Share, contentDescription = "공유") }
             if (!isNew) IconButton(onClick = { askDelete = true }) {
                 Icon(Icons.Filled.Delete, contentDescription = "삭제")
             }
