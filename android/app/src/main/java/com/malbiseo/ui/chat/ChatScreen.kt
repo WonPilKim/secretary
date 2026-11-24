@@ -123,7 +123,7 @@ fun ChatScreen(onNavigate: (String) -> Unit) {
 
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
-            messages.add(ChatMessage("${user.name}님, 무엇을 도와드릴까요? 마이크를 누르고 편하게 말씀해 주세요.", false))
+            messages.add(ChatMessage("무엇을 도와드릴까요? 마이크를 누르고 편하게 말씀해 주세요.", false))
         }
     }
     LaunchedEffect(messages.size) {

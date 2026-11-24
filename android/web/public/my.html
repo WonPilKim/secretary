@@ -398,7 +398,7 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
     ['pMeetings','pMemos','pSchedules'].forEach(function(id){$(id).classList.add('hidden');});
     try{
       var prof=await get('users/'+session.uid);
-      var name=prof&&prof.fields&&prof.fields.name?val(prof.fields.name):session.loginId;
+      var name=prof&&prof.fields&&prof.fields.name?val(prof.fields.name):(session.loginId&&session.loginId.indexOf('@')<0?session.loginId:'회원');
       $('hello').textContent=name+'님의 기록';
       // 다른 페이지 상단 메뉴에서도 이름을 보여주도록 세션에 저장
       if(session.name!==name){ session.name=name; var st=store(); if(st) try{ st.setItem(KEY,JSON.stringify(session)); }catch(e){} }
@@ -418,7 +418,7 @@ main.wide{max-width:1080px;padding-left:20px;padding-right:20px}
   function navAuth(loggedIn){
     $('navLogin').classList.toggle('hidden',loggedIn);
     $('navUser').classList.toggle('hidden',!loggedIn); $('logout').classList.toggle('hidden',!loggedIn);
-    if(loggedIn&&session) setNavUser(session.name||session.loginId);
+    if(loggedIn&&session) setNavUser(session.name||(session.loginId&&session.loginId.indexOf('@')<0?session.loginId:'내 계정'));
   }
   function showLogin(msg){ navAuth(false); $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); $('loginErr').textContent=msg||''; $('lid').focus(); }
   function showApp(){ navAuth(true); $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); loadAll(); }

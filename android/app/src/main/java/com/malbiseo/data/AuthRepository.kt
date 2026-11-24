@@ -55,7 +55,7 @@ class AuthRepository {
 
     /**
      * 로그인 상태. 화면에는 이메일 대신 이름을 보여주므로 이름을 아래 순서로 찾는다.
-     *  1) Firebase 프로필 이름  2) Firestore users/{uid} 의 name  3) 둘 다 없으면 이메일(아이디)
+     *  1) Firebase 프로필 이름  2) Firestore users/{uid} 의 name  3) 둘 다 없으면 "회원" (예전 아이디 계정은 아이디). 이메일은 이름 자리에 쓰지 않는다
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     private val loginState: Flow<AuthState> = combine(firebaseUser, profileVersion) { u, _ -> u?.uid }
@@ -67,7 +67,7 @@ class AuthRepository {
                 val id = loginIdOf(u)
                 val name = u.displayName?.takeIf { it.isNotBlank() }
                     ?: storedName?.takeIf { it.isNotBlank() }
-                    ?: id
+                    ?: if ('@' in id) "회원" else id // 이메일은 이름 자리에 보여주지 않는다
                 AuthState.LoggedIn(User(id = u.uid, name = name, loginId = id))
             }
         }

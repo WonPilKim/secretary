@@ -8,7 +8,7 @@
   var s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
   if (!s || !s.uid) return;
-  var name = s.name || s.loginId || '내 계정';
+  var name = s.name || (s.loginId && s.loginId.indexOf('@') < 0 ? s.loginId : '') || '내 계정';
   document.querySelectorAll('[data-auth=login]').forEach(function (a) {
     a.textContent = name + '님';
     a.title = name + '님의 기록 보기';
