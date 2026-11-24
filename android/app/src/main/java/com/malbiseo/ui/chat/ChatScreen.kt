@@ -83,7 +83,8 @@ fun ChatScreen(onNavigate: (String) -> Unit) {
     val app = LocalContext.current.app()
     val user = LocalUser.current
     val data = LocalUserData.current
-    val handler = remember(data) { CommandHandler(data) }
+    val context = LocalContext.current
+    val handler = remember(data) { CommandHandler(data, context) }
     val messages = app.chatLog
     var input by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()

@@ -39,6 +39,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
@@ -543,6 +545,39 @@ fun ScheduleEditScreen(id: Long, initialEpochDay: Long, onDone: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("저장") }
+
+            // 다른 캘린더·메신저로 보내기 (화면에 입력된 내용 기준)
+            val currentStart = LocalDateTime.of(date, time).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        if (title.isBlank()) error = "제목을 입력해 주세요."
+                        else addToPhoneCalendar(context, title.trim(), note.trim(), currentStart)
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Filled.EditCalendar, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("휴대폰 캘린더에 추가")
+                }
+                OutlinedButton(
+                    onClick = {
+                        if (title.isBlank()) error = "제목을 입력해 주세요."
+                        else shareSchedule(context, title.trim(), note.trim(), currentStart)
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("공유")
+                }
+            }
+            Text(
+                "삼성 캘린더·구글 캘린더에 넣거나, 카카오톡·문자로 일정을 보낼 수 있어요.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
         }
     }
 
